@@ -1,6 +1,7 @@
 """Web scraper for Danish news sites without RSS feeds."""
 
 import time
+from datetime import datetime
 from urllib.parse import urljoin
 
 import httpx
@@ -44,22 +45,46 @@ def _clean_title(text: str) -> str:
     return " ".join(text.split()).strip()
 
 
-def _fetch_meta_description(url: str) -> str:
-    """Fetch og:description or meta description from an article page."""
+def _parse_datetime(text: str) -> datetime | None:
+    """Parse an ISO datetime string."""
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M"):
+        try:
+            return datetime.strptime(text.strip(), fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _fetch_article_meta(url: str) -> tuple[str, datetime | None]:
+    """Fetch description and published date from an article page."""
+    summary = ""
+    published = None
     try:
         r = httpx.get(url, headers=HEADERS, follow_redirects=True, timeout=10)
         if r.status_code != 200:
-            return ""
+            return summary, published
         soup = BeautifulSoup(r.text, "lxml")
+
+        # Extract description
         og = soup.find("meta", property="og:description")
         if og and og.get("content"):
-            return og["content"].strip()
-        meta = soup.find("meta", attrs={"name": "description"})
-        if meta and meta.get("content"):
-            return meta["content"].strip()
+            summary = og["content"].strip()
+        else:
+            meta = soup.find("meta", attrs={"name": "description"})
+            if meta and meta.get("content"):
+                summary = meta["content"].strip()
+
+        # Extract published date
+        pub_tag = soup.find("meta", property="article:published_time")
+        if pub_tag and pub_tag.get("content"):
+            published = _parse_datetime(pub_tag["content"])
+        if not published:
+            time_tag = soup.find("time", datetime=True)
+            if time_tag:
+                published = _parse_datetime(time_tag["datetime"])
     except Exception:
         pass
-    return ""
+    return summary, published
 
 
 def scrape_site(
@@ -102,10 +127,10 @@ def scrape_site(
                     continue
                 seen_urls.add(full_url)
 
-                # Fetch meta description for better scoring context
+                # Fetch meta description and date
                 if delay > 0:
                     time.sleep(delay)
-                summary = _fetch_meta_description(full_url)
+                summary, published = _fetch_article_meta(full_url)
 
                 articles.append(
                     Article(
@@ -115,6 +140,7 @@ def scrape_site(
                         summary=summary[:500],
                         language=source.language,
                         has_paywall=source.paywall,
+                        published=published,
                     )
                 )
 
