@@ -1,0 +1,228 @@
+import argparse
+
+from rich.console import Console
+from rich.progress import Progress
+
+from samfkurator.config import load_config
+from samfkurator.db import Database
+from samfkurator.output.daily import display_daily, select_daily
+from samfkurator.output.export import export_csv, export_json
+from samfkurator.output.terminal import display_results
+from samfkurator.sources.extractors import extract_full_text
+from samfkurator.sources.rss import fetch_all_sources
+
+
+def _create_backend(config, backend_name: str):
+    """Create the appropriate AI scoring backend."""
+    if backend_name == "claude":
+        from samfkurator.scoring.claude_backend import ClaudeBackend
+
+        return ClaudeBackend(config.ai.claude.model)
+    else:
+        from samfkurator.scoring.ollama_backend import OllamaBackend
+
+        return OllamaBackend(
+            config.ai.ollama.base_url,
+            config.ai.ollama.model,
+            config.ai.ollama.temperature,
+        )
+
+
+def _fetch_and_score(args, config, db, console):
+    """Fetch new articles and score them."""
+    # 1. Fetch RSS feeds
+    console.print("[bold]Henter nyheder fra RSS feeds...[/bold]")
+    all_sources = config.get_all_sources()
+    articles = fetch_all_sources(all_sources, config.scraping.max_articles_per_feed)
+
+    # 2. Filter already-scored articles
+    new_articles = [a for a in articles if not db.has_score(a.url)]
+    console.print(
+        f"Fandt [bold]{len(articles)}[/bold] artikler, "
+        f"[bold]{len(new_articles)}[/bold] nye."
+    )
+
+    if not new_articles:
+        console.print("[dim]Ingen nye artikler at score.[/dim]")
+        return
+
+    # 3. Extract full text (optional)
+    if not args.no_fetch and config.scraping.fetch_full_text:
+        with Progress(console=console) as progress:
+            task = progress.add_task(
+                "Henter artikeltekst...", total=len(new_articles)
+            )
+            for article in new_articles:
+                if not article.has_paywall:
+                    extract_full_text(
+                        article, config.scraping.request_delay_seconds
+                    )
+                progress.update(task, advance=1)
+
+    # 4. Score with LLM
+    backend_name = args.backend or config.ai.backend
+    backend = _create_backend(config, backend_name)
+
+    if backend_name == "ollama" and not backend.is_available():
+        console.print(
+            "[red bold]Ollama er ikke tilgængelig![/red bold]\n"
+            "[dim]Start Ollama med: ollama serve\n"
+            "Eller brug: samfkurator daily --backend claude[/dim]"
+        )
+        return
+
+    console.print(
+        f"Scorer artikler med [bold]{backend_name}[/bold]..."
+    )
+
+    scored = 0
+    failed = 0
+    with Progress(console=console) as progress:
+        task = progress.add_task(
+            "Scorer artikler...", total=len(new_articles)
+        )
+        for article in new_articles:
+            db.save_article(article)
+            result = backend.score_article(article)
+            if result:
+                db.save_score(result)
+                scored += 1
+            else:
+                failed += 1
+            progress.update(task, advance=1)
+
+    console.print(
+        f"[green]Scoret {scored} artikler.[/green]"
+        + (f" [yellow]({failed} fejlede)[/yellow]" if failed else "")
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Samfkurator - Nyhedskurator til Samfundsfag A",
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    # Daily command (default/main feature)
+    daily_parser = subparsers.add_parser(
+        "daily", help="Dagens must-read artikler"
+    )
+    daily_parser.add_argument(
+        "--count", type=int, help="Antal artikler (default: 10)"
+    )
+    daily_parser.add_argument(
+        "--backend", choices=["ollama", "claude"],
+        help="AI backend (overrides config)",
+    )
+    daily_parser.add_argument(
+        "--no-fetch", action="store_true",
+        help="Spring fuld tekst-ekstraktion over",
+    )
+    daily_parser.add_argument(
+        "--cached", action="store_true",
+        help="Vis kun tidligere scorede artikler (ingen ny hentning)",
+    )
+
+    # All command - show all scored articles
+    all_parser = subparsers.add_parser(
+        "all", help="Vis alle scorede artikler"
+    )
+    all_parser.add_argument(
+        "--min-score", type=int, help="Minimum score at vise"
+    )
+    all_parser.add_argument(
+        "--limit", type=int, default=50, help="Max antal resultater"
+    )
+    all_parser.add_argument(
+        "--backend", choices=["ollama", "claude"],
+        help="AI backend (overrides config)",
+    )
+    all_parser.add_argument(
+        "--no-fetch", action="store_true",
+        help="Spring fuld tekst-ekstraktion over",
+    )
+    all_parser.add_argument(
+        "--format", choices=["terminal", "json", "csv"],
+        default="terminal", help="Output-format",
+    )
+    all_parser.add_argument(
+        "--cached", action="store_true",
+        help="Vis kun tidligere scorede artikler",
+    )
+
+    # Web command
+    web_parser = subparsers.add_parser(
+        "web", help="Start webserver med sortérbar tabel"
+    )
+    web_parser.add_argument(
+        "--port", type=int, default=5000, help="Port (default: 5000)"
+    )
+    web_parser.add_argument(
+        "--host", default="127.0.0.1", help="Host (default: 127.0.0.1)"
+    )
+
+    args = parser.parse_args()
+    config = load_config()
+
+    # Handle web command before database
+    if args.command == "web":
+        from samfkurator.web.app import run_server
+
+        console = Console()
+        console.print(
+            f"[bold cyan]Samfkurator web[/bold cyan] starter på "
+            f"[link=http://{args.host}:{args.port}]"
+            f"http://{args.host}:{args.port}[/link]"
+        )
+        run_server(host=args.host, port=args.port, debug=True)
+        return
+
+    db = Database(config.database.path)
+    console = Console()
+
+    # Default to daily command
+    if args.command is None:
+        args.command = "daily"
+        args.count = None
+        args.backend = None
+        args.no_fetch = False
+        args.cached = False
+
+    try:
+        if args.command == "daily":
+            if not args.cached:
+                _fetch_and_score(args, config, db, console)
+
+            # Get today's articles and select diverse top N
+            min_score = config.scoring.min_score_to_display
+            rows = db.get_todays_scored_articles(min_score)
+
+            if not rows:
+                # Fall back to all scored articles if none today
+                rows = db.get_scored_articles(min_score, 100)
+
+            if args.count:
+                config.daily.count = args.count
+
+            daily_rows = select_daily(rows, config.daily)
+            display_daily(daily_rows, console)
+
+        elif args.command == "all":
+            if not args.cached:
+                _fetch_and_score(args, config, db, console)
+
+            min_score = args.min_score or config.scoring.min_score_to_display
+            rows = db.get_scored_articles(min_score, args.limit)
+
+            fmt = args.format
+            if fmt == "terminal":
+                display_results(rows, console)
+            elif fmt == "json":
+                filepath = export_json(rows, config.output.export_path)
+                console.print(f"Eksporteret til [bold]{filepath}[/bold]")
+            elif fmt == "csv":
+                filepath = export_csv(rows, config.output.export_path)
+                console.print(f"Eksporteret til [bold]{filepath}[/bold]")
+
+    finally:
+        db.close()

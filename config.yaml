@@ -1,0 +1,109 @@
+# Samfkurator - Konfiguration
+
+# AI Backend
+ai:
+  backend: "ollama"  # "ollama" eller "claude"
+  ollama:
+    model: "llama3:8b"
+    base_url: "http://localhost:11434"
+    temperature: 0.3
+  claude:
+    model: "claude-sonnet-4-20250514"
+    # API-nøgle sættes via ANTHROPIC_API_KEY miljøvariabel
+
+# Nyhedskilder
+sources:
+  danish:
+    - name: "DR Nyheder"
+      feeds:
+        - "https://www.dr.dk/nyheder/service/feeds/senestenyt"
+        - "https://www.dr.dk/nyheder/service/feeds/indland"
+        - "https://www.dr.dk/nyheder/service/feeds/udland"
+        - "https://www.dr.dk/nyheder/service/feeds/penge"
+        - "https://www.dr.dk/nyheder/service/feeds/politik"
+      paywall: false
+      language: "da"
+
+    - name: "TV2 Nyheder"
+      feeds:
+        - "https://feeds.tv2.dk/nyheder/rss"
+      paywall: false
+      language: "da"
+
+    - name: "Politiken"
+      feeds:
+        - "https://politiken.dk/rss/senestenyt.rss"
+      paywall: true
+      language: "da"
+
+    - name: "Berlingske"
+      feeds:
+        - "https://www.berlingske.dk/content/rss"
+      paywall: true
+      language: "da"
+
+    - name: "Jyllands-Posten"
+      feeds:
+        - "https://jyllands-posten.dk/rss/topnyheder.jsp"
+      paywall: true
+      language: "da"
+
+  international:
+    - name: "The Guardian"
+      feeds:
+        - "https://www.theguardian.com/world/rss"
+        - "https://www.theguardian.com/politics/rss"
+        - "https://www.theguardian.com/business/rss"
+      paywall: false
+      language: "en"
+
+    - name: "BBC News"
+      feeds:
+        - "https://feeds.bbci.co.uk/news/rss.xml"
+        - "https://feeds.bbci.co.uk/news/world/rss.xml"
+        - "https://feeds.bbci.co.uk/news/business/rss.xml"
+      paywall: false
+      language: "en"
+
+    - name: "Financial Times"
+      feeds:
+        - "https://www.ft.com/rss/home"
+      paywall: true
+      language: "en"
+
+    - name: "New York Times"
+      feeds:
+        - "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+        - "https://rss.nytimes.com/services/xml/rss/nyt/Europe.xml"
+        - "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"
+      paywall: true
+      language: "en"
+
+# Scraping-adfærd
+scraping:
+  max_articles_per_feed: 20
+  request_delay_seconds: 2.0
+  user_agent: "Samfkurator/0.1 (educational news aggregator)"
+  fetch_full_text: true
+  timeout_seconds: 15
+
+# Scoring
+scoring:
+  min_score_to_display: 4
+
+# Daily must-reads
+daily:
+  count: 10
+  max_per_discipline: 3
+  min_danish: 2
+  min_international: 2
+
+# Output
+output:
+  format: "terminal"
+  max_results: 50
+  export_path: "./output"
+
+# Database
+database:
+  path: "./samfkurator.db"

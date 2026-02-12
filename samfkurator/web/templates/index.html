@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samfkurator - Nyhedsrelevans for Samfundsfag A</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 1.5rem;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+            color: #38bdf8;
+        }
+        .subtitle {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .filters label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        .filters select, .filters input {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.85rem;
+        }
+        .filters input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.7);
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+        .filter-dates {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .filter-dates .sep { color: #64748b; font-size: 0.8rem; }
+        .count { color: #64748b; font-size: 0.85rem; margin-left: auto; }
+        .btn-today {
+            background: #334155;
+            color: #94a3b8;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .btn-today:hover { background: #475569; color: #e2e8f0; }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        thead { position: sticky; top: 0; z-index: 10; }
+        th {
+            background: #1e293b;
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            border-bottom: 2px solid #334155;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        th:hover { color: #38bdf8; }
+        th .sort-arrow { margin-left: 0.3rem; font-size: 0.7rem; }
+        td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #1e293b;
+            vertical-align: top;
+        }
+        tr:hover { background: #1e293b; }
+
+        /* Score */
+        .score {
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-align: center;
+            width: 3rem;
+        }
+        .score-high { color: #4ade80; }
+        .score-mid { color: #facc15; }
+        .score-low { color: #64748b; }
+
+        /* Score bar */
+        .score-bar {
+            display: flex;
+            gap: 2px;
+            margin-top: 0.2rem;
+        }
+        .score-bar span {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            background: #334155;
+        }
+        .score-bar span.filled { background: #38bdf8; }
+
+        /* Discipline badge */
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .badge-sociologi { background: #581c87; color: #e9d5ff; }
+        .badge-politik { background: #7f1d1d; color: #fecaca; }
+        .badge-okonomi { background: #14532d; color: #bbf7d0; }
+        .badge-international_politik { background: #1e3a5f; color: #bfdbfe; }
+        .badge-metode { background: #713f12; color: #fef08a; }
+
+        /* Sub-scores */
+        .sub-scores {
+            display: flex;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .sub-scores span { white-space: nowrap; }
+
+        /* Title link */
+        a.article-link {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        a.article-link:hover { color: #38bdf8; text-decoration: underline; }
+        .lang-tag {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-left: 0.3rem;
+        }
+        .source-name { color: #94a3b8; white-space: nowrap; }
+        .explanation { color: #94a3b8; font-size: 0.8rem; max-width: 300px; }
+        .date-cell { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <h1>Samfkurator</h1>
+    <p class="subtitle">Nyhedsrelevans for Samfundsfag A (stx)</p>
+
+    <div class="filters">
+        <div class="filter-group">
+            <label>Min. score</label>
+            <select id="filter-score">
+                {% for s in range(1, 11) %}
+                <option value="{{ s }}" {{ 'selected' if s == current_min_score }}>{{ s }}+</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Disciplin</label>
+            <select id="filter-discipline">
+                <option value="">Alle</option>
+                {% for key, label in disciplines.items() %}
+                <option value="{{ key }}" {{ 'selected' if key == current_discipline }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Kilde</label>
+            <select id="filter-source">
+                <option value="">Alle</option>
+                {% for s in sources %}
+                <option value="{{ s }}" {{ 'selected' if s == current_source }}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Periode</label>
+            <div class="filter-dates">
+                <input type="date" id="filter-date-from" value="{{ current_date_from }}" max="{{ today }}">
+                <span class="sep">-</span>
+                <input type="date" id="filter-date-to" value="{{ current_date_to }}" max="{{ today }}">
+            </div>
+        </div>
+        <button class="btn-today" id="btn-today">I dag</button>
+        <button class="btn-today" id="btn-week">Seneste uge</button>
+        <button class="btn-today" id="btn-month">Seneste m&#229;ned</button>
+        <button class="btn-today" id="btn-reset">Nulstil</button>
+        <span class="count">{{ articles|length }} artikler</span>
+    </div>
+
+    <table id="articles-table">
+        <thead>
+            <tr>
+                <th data-sort="score" data-type="num">Score <span class="sort-arrow">&#x25BC;</span></th>
+                <th data-sort="date" data-type="str">Dato <span class="sort-arrow"></span></th>
+                <th data-sort="source" data-type="str">Kilde <span class="sort-arrow"></span></th>
+                <th data-sort="title" data-type="str">Titel <span class="sort-arrow"></span></th>
+                <th data-sort="discipline" data-type="str">Disciplin <span class="sort-arrow"></span></th>
+                <th>Delscores</th>
+                <th data-sort="explanation" data-type="str">Begrundelse <span class="sort-arrow"></span></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in articles %}
+            <tr>
+                <td class="score {{ 'score-high' if a.score >= 8 else ('score-mid' if a.score >= 6 else 'score-low') }}"
+                    data-value="{{ a.score }}">
+                    {{ a.score }}
+                    <div class="score-bar">
+                        {% for i in range(10) %}
+                        <span class="{{ 'filled' if i < a.score }}"></span>
+                        {% endfor %}
+                    </div>
+                </td>
+                <td class="date-cell" data-value="{{ a.published_date }}">{{ a.published_date }}</td>
+                <td class="source-name" data-value="{{ a.source }}">{{ a.source }}</td>
+                <td data-value="{{ a.title }}">
+                    <a class="article-link" href="{{ a.url }}" target="_blank">{{ a.title }}</a>
+                    {% if a.language == 'en' %}<span class="lang-tag">EN</span>{% endif %}
+                </td>
+                <td data-value="{{ a.discipline }}">
+                    <span class="badge badge-{{ a.discipline }}">{{ a.discipline_label }}</span>
+                </td>
+                <td>
+                    <div class="sub-scores">
+                        <span title="Sociologi">So:{{ a.soc }}</span>
+                        <span title="Politik">Po:{{ a.pol }}</span>
+                        <span title="Økonomi">Øk:{{ a.oko }}</span>
+                        <span title="Int. Politik">IP:{{ a.ip }}</span>
+                        <span title="Metode">Me:{{ a.met }}</span>
+                    </div>
+                </td>
+                <td class="explanation" data-value="{{ a.explanation }}">{{ a.explanation }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        // Sortable columns
+        const table = document.getElementById('articles-table');
+        const headers = table.querySelectorAll('th[data-sort]');
+        let currentSort = { col: 'score', dir: 'desc' };
+
+        headers.forEach(th => {
+            th.addEventListener('click', () => {
+                const col = th.dataset.sort;
+                const type = th.dataset.type;
+                const dir = (currentSort.col === col && currentSort.dir === 'desc') ? 'asc' : 'desc';
+                currentSort = { col, dir };
+
+                headers.forEach(h => h.querySelector('.sort-arrow').textContent = '');
+                th.querySelector('.sort-arrow').textContent = dir === 'desc' ? '\u25BC' : '\u25B2';
+
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                rows.sort((a, b) => {
+                    const aCell = a.querySelector(`td:nth-child(${th.cellIndex + 1})`);
+                    const bCell = b.querySelector(`td:nth-child(${th.cellIndex + 1})`);
+                    let aVal = aCell.dataset.value || aCell.textContent.trim();
+                    let bVal = bCell.dataset.value || bCell.textContent.trim();
+
+                    if (type === 'num') {
+                        aVal = parseFloat(aVal) || 0;
+                        bVal = parseFloat(bVal) || 0;
+                    } else {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                    }
+
+                    if (aVal < bVal) return dir === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return dir === 'asc' ? 1 : -1;
+                    return 0;
+                });
+
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+
+        // Filters
+        function applyFilters() {
+            const score = document.getElementById('filter-score').value;
+            const discipline = document.getElementById('filter-discipline').value;
+            const source = document.getElementById('filter-source').value;
+            const dateFrom = document.getElementById('filter-date-from').value;
+            const dateTo = document.getElementById('filter-date-to').value;
+            const params = new URLSearchParams();
+            if (score > 1) params.set('min_score', score);
+            if (discipline) params.set('discipline', discipline);
+            if (source) params.set('source', source);
+            if (dateFrom) params.set('date_from', dateFrom);
+            if (dateTo) params.set('date_to', dateTo);
+            window.location.search = params.toString();
+        }
+
+        document.getElementById('filter-score').addEventListener('change', applyFilters);
+        document.getElementById('filter-discipline').addEventListener('change', applyFilters);
+        document.getElementById('filter-source').addEventListener('change', applyFilters);
+        document.getElementById('filter-date-from').addEventListener('change', applyFilters);
+        document.getElementById('filter-date-to').addEventListener('change', applyFilters);
+
+        // Quick buttons
+        document.getElementById('btn-today').addEventListener('click', () => {
+            const today = '{{ today }}';
+            document.getElementById('filter-date-from').value = today;
+            document.getElementById('filter-date-to').value = today;
+            applyFilters();
+        });
+
+        function setDateRange(daysBack) {
+            const today = new Date();
+            const from = new Date(today);
+            from.setDate(from.getDate() - daysBack);
+            document.getElementById('filter-date-from').value = from.toISOString().slice(0, 10);
+            document.getElementById('filter-date-to').value = today.toISOString().slice(0, 10);
+            applyFilters();
+        }
+
+        document.getElementById('btn-week').addEventListener('click', () => setDateRange(7));
+        document.getElementById('btn-month').addEventListener('click', () => setDateRange(30));
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            window.location.search = '';
+        });
+    </script>
+</body>
+</html>
