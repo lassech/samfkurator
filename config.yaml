@@ -30,24 +30,6 @@ sources:
       paywall: false
       language: "da"
 
-    - name: "Politiken"
-      feeds:
-        - "https://politiken.dk/rss/senestenyt.rss"
-      paywall: true
-      language: "da"
-
-    - name: "Berlingske"
-      feeds:
-        - "https://www.berlingske.dk/content/rss"
-      paywall: true
-      language: "da"
-
-    - name: "Jyllands-Posten"
-      feeds:
-        - "https://jyllands-posten.dk/rss/topnyheder.jsp"
-      paywall: true
-      language: "da"
-
   international:
     - name: "The Guardian"
       feeds:
@@ -78,6 +60,26 @@ sources:
         - "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"
       paywall: true
       language: "en"
+
+# Web scraping (sites uden RSS)
+scrape_sources:
+  - name: "Politiken"
+    urls:
+      - "https://politiken.dk"
+    paywall: true
+    language: "da"
+
+  - name: "Berlingske"
+    urls:
+      - "https://www.berlingske.dk"
+    paywall: true
+    language: "da"
+
+  - name: "Jyllands-Posten"
+    urls:
+      - "https://jyllands-posten.dk"
+    paywall: true
+    language: "da"
 
 # Scraping-adfærd
 scraping:

@@ -35,6 +35,18 @@ def _fetch_and_score(args, config, db, console):
     all_sources = config.get_all_sources()
     articles = fetch_all_sources(all_sources, config.scraping.max_articles_per_feed)
 
+    # 1b. Scrape sites without RSS
+    if config.scrape_sources:
+        from samfkurator.sources.scraper import scrape_all_sources
+
+        console.print("[bold]Scraper Politiken, Berlingske, JP...[/bold]")
+        scraped = scrape_all_sources(
+            config.scrape_sources,
+            max_per_site=config.scraping.max_articles_per_feed,
+            delay=config.scraping.request_delay_seconds,
+        )
+        articles.extend(scraped)
+
     # 2. Filter already-scored articles
     new_articles = [a for a in articles if not db.has_score(a.url)]
     console.print(

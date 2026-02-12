@@ -66,10 +66,19 @@ class DatabaseConfig:
 
 
 @dataclass
+class ScrapeSourceConfig:
+    name: str
+    urls: list[str]
+    paywall: bool = True
+    language: str = "da"
+
+
+@dataclass
 class Config:
     ai: AIConfig = field(default_factory=AIConfig)
     sources_danish: list[SourceConfig] = field(default_factory=list)
     sources_international: list[SourceConfig] = field(default_factory=list)
+    scrape_sources: list[ScrapeSourceConfig] = field(default_factory=list)
     scraping: ScrapingConfig = field(default_factory=ScrapingConfig)
     scoring: ScoringConfig = field(default_factory=ScoringConfig)
     daily: DailyConfig = field(default_factory=DailyConfig)
@@ -119,6 +128,11 @@ def load_config(path: str | None = None) -> Config:
         SourceConfig(**s) for s in sources_raw.get("international", [])
     ]
 
+    # Parse scrape sources
+    scrape_sources = [
+        ScrapeSourceConfig(**s) for s in raw.get("scrape_sources", [])
+    ]
+
     # Parse simple configs
     scraping = ScrapingConfig(**raw.get("scraping", {}))
     scoring = ScoringConfig(**raw.get("scoring", {}))
@@ -130,6 +144,7 @@ def load_config(path: str | None = None) -> Config:
         ai=ai,
         sources_danish=danish,
         sources_international=international,
+        scrape_sources=scrape_sources,
         scraping=scraping,
         scoring=scoring,
         daily=daily,
