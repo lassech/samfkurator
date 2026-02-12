@@ -17,27 +17,28 @@ HEADERS = {
     ),
 }
 
-# URL path patterns that indicate news articles for each site
-ARTICLE_PATTERNS = {
-    "politiken.dk": [
-        "/danmark/", "/international/", "/debat/", "/kultur/",
-        "/oekonomi/", "/samfund/", "/politik/",
-    ],
-    "berlingske.dk": [
-        "/politik/", "/oekonomi/", "/indland/", "/internationalt/",
-        "/samfund/", "/kultur/", "/kommentarer/",
-    ],
-    "jyllands-posten.dk": [
-        "/politik/", "/indland/", "/international/", "/oekonomi/",
-        "/debat/",
-    ],
-}
-
-
-def _is_article_link(href: str, domain: str) -> bool:
-    """Check if a link looks like a news article."""
-    patterns = ARTICLE_PATTERNS.get(domain, [])
-    return any(p in href for p in patterns)
+def _is_article_link(href: str, base_url: str, sections: list[str] | None = None) -> bool:
+    """Check if a link looks like a news article (not navigation)."""
+    full = urljoin(base_url, href)
+    base_domain = base_url.split("//")[1].split("/")[0]
+    link_domain = full.split("//")[1].split("/")[0] if "//" in full else ""
+    # Must be same domain
+    if base_domain.replace("www.", "") != link_domain.replace("www.", ""):
+        return False
+    path = "/" + full.split("//")[1].split("/", 1)[1] if "//" in full else href
+    # If sections are specified, link must be in one of them
+    if sections:
+        if not any(path.startswith(s) for s in sections):
+            return False
+    # Require deeper path than just section (e.g. /politik/article-slug)
+    segments = [s for s in path.strip("/").split("/") if s]
+    if len(segments) < 2:
+        return False
+    # Skip non-article paths
+    skip = ["video", "podcast", "galleri", "live", "tag", "emne", "search"]
+    if any(s in segments[0].lower() for s in skip):
+        return False
+    return True
 
 
 def _clean_title(text: str) -> str:
@@ -103,7 +104,6 @@ def scrape_site(
                 continue
 
             soup = BeautifulSoup(r.text, "lxml")
-            domain = url.split("//")[1].split("/")[0].replace("www.", "")
 
             for a_tag in soup.find_all("a", href=True):
                 if len(articles) >= max_articles:
@@ -112,11 +112,14 @@ def scrape_site(
                 href = a_tag["href"]
                 title = _clean_title(a_tag.get_text())
 
-                # Skip short titles (navigation links, etc.)
+                # Skip short titles and ad/promo text
                 if len(title) < 20:
                     continue
+                title_lower = title.lower()
+                if any(w in title_lower for w in ["adgang", "abonne", "tilbud", "prøv gratis", "kun 1 kr"]):
+                    continue
 
-                if not _is_article_link(href, domain):
+                if not _is_article_link(href, url, source.sections or None):
                     continue
 
                 # Make absolute URL

@@ -65,19 +65,30 @@ sources:
 scrape_sources:
   - name: "Politiken"
     urls:
-      - "https://politiken.dk"
+      - "https://politiken.dk/debat/"
+      - "https://politiken.dk/internationalt/"
+      - "https://politiken.dk/danmark/"
     paywall: true
     language: "da"
 
   - name: "Berlingske"
     urls:
       - "https://www.berlingske.dk"
+    sections:
+      - "/opinion"
+      - "/business"
+      - "/samfund"
+      - "/politik"
+      - "/internationalt"
     paywall: true
     language: "da"
 
   - name: "Jyllands-Posten"
     urls:
-      - "https://jyllands-posten.dk"
+      - "https://jyllands-posten.dk/politik"
+      - "https://jyllands-posten.dk/erhverv"
+      - "https://jyllands-posten.dk/international"
+      - "https://jyllands-posten.dk/debat"
     paywall: true
     language: "da"
 

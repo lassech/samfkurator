@@ -71,6 +71,7 @@ class ScrapeSourceConfig:
     urls: list[str]
     paywall: bool = True
     language: str = "da"
+    sections: list[str] = field(default_factory=list)
 
 
 @dataclass
