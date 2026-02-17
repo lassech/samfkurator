@@ -87,6 +87,12 @@ agent_sources:
   - name: "New York Times"
     url: "https://www.nytimes.com/section/business/economy"
     language: "en"
+  - name: "Weekendavisen"
+    url: "https://www.weekendavisen.dk/samfund"
+    language: "da"
+  - name: "Weekendavisen"
+    url: "https://www.weekendavisen.dk/ideer"
+    language: "da"
 
 # Gammel BeautifulSoup-scraper (bruges ikke længere - erstattet af agent)
 scrape_sources: []
