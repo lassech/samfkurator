@@ -2,16 +2,22 @@
 
 # AI Backend
 ai:
-  backend: "ollama"  # "ollama" eller "claude"
+  backend: "gemini"  # "gemini", "deepseek", "claude", "ollama"
   ollama:
     model: "llama3:8b"
     base_url: "http://localhost:11434"
     temperature: 0.3
   claude:
-    model: "claude-sonnet-4-20250514"
+    model: "claude-haiku-4-5-20251001"
     # API-nøgle sættes via ANTHROPIC_API_KEY miljøvariabel
+  gemini:
+    model: "gemini-2.0-flash"
+    # API-nøgle sættes via GEMINI_API_KEY miljøvariabel
+  deepseek:
+    model: "deepseek-chat"
+    # API-nøgle sættes via DEEPSEEK_API_KEY miljøvariabel
 
-# Nyhedskilder
+# Nyhedskilder via RSS (DR, TV2, internationale medier)
 sources:
   danish:
     - name: "DR Nyheder"
@@ -61,38 +67,31 @@ sources:
       paywall: true
       language: "en"
 
-# Web scraping (sites uden RSS)
-scrape_sources:
+# Agent-browser kilder (bypass-paywalls + fuld tekst + to-trins vurdering)
+agent_sources:
   - name: "Politiken"
-    urls:
-      - "https://politiken.dk/debat/"
-      - "https://politiken.dk/internationalt/"
-      - "https://politiken.dk/danmark/"
-    paywall: true
+    url: "https://politiken.dk/debat/"
     language: "da"
-
+  - name: "Politiken"
+    url: "https://politiken.dk/internationalt/"
+    language: "da"
+  - name: "Politiken"
+    url: "https://politiken.dk/danmark/"
+    language: "da"
   - name: "Berlingske"
-    urls:
-      - "https://www.berlingske.dk"
-    sections:
-      - "/opinion"
-      - "/business"
-      - "/samfund"
-      - "/politik"
-      - "/internationalt"
-    paywall: true
+    url: "https://www.berlingske.dk"
     language: "da"
-
   - name: "Jyllands-Posten"
-    urls:
-      - "https://jyllands-posten.dk/politik"
-      - "https://jyllands-posten.dk/erhverv"
-      - "https://jyllands-posten.dk/international"
-      - "https://jyllands-posten.dk/debat"
-    paywall: true
+    url: "https://jyllands-posten.dk/politik"
+    language: "da"
+  - name: "Jyllands-Posten"
+    url: "https://jyllands-posten.dk/international"
     language: "da"
 
-# Scraping-adfærd
+# Gammel BeautifulSoup-scraper (bruges ikke længere - erstattet af agent)
+scrape_sources: []
+
+# Scraping-adfærd (bruges stadig til RSS-tekst-ekstraktion)
 scraping:
   max_articles_per_feed: 20
   request_delay_seconds: 2.0
@@ -102,7 +101,7 @@ scraping:
 
 # Scoring
 scoring:
-  min_score_to_display: 4
+  min_score_to_display: 5
 
 # Daily must-reads
 daily:

@@ -1,149 +1,177 @@
+"""Scoring prompts for Samfkurator."""
+
 import json
 
 from samfkurator.models import DisciplineScore, ScoringResult
 
-SYSTEM_PROMPT = """\
-Du er en ekspert i Samfundsfag A (stx) og hjælper en gymnasielærer med at \
-vurdere nyhedsartiklers relevans for undervisningen.
+# ─── Shared curriculum context ────────────────────────────────────────────────
 
-Din opgave er at vurdere om en artikel kan bruges som GENSTANDSFELT for \
-analyse med fagets teorier og begreber. En god artikel er en som eleverne \
-kan analysere med konkrete faglige redskaber -- ikke blot en artikel der \
-"handler om" et emne.
+_CURRICULUM = """\
+Samfundsfag A (stx) er opdelt i fem discipliner med følgende centrale teorier og begreber:
 
-Fagets discipliner med tilhørende teorier og begreber:
+POLITIK:
+Lipset-Rokkan, fordelings- og værdipolitik, postmaterialisme, Molins model, Kaare Strøm,
+medianvælgerteorien, partityper, Sjøbloms partistrategier, marginalvælgere, kernevælgere,
+issuevoting, Columbia-skolen, Michigan-skolen, rational choice-model, liberalisme, socialisme,
+konservatisme, deltagelsesdemokrati, konkurrencedemokrati, deliberativt demokrati, meritokrati,
+medborgerskab, parlamentarisk styringskæde, valgmåder, lovgivningsproces, magtformer (ressource,
+relation, strukturel, direkte, indirekte, institutionel), magtdeling, regeringstyper,
+medialisering, priming, framing, nyhedskriterier, gatekeeper-funktion, RAS-model, kanyleteori,
+forstærkelses- og mobiliseringshypotese, køn (formel og reel lighed)
 
-**Politik:**
-Lipset-Rokkan, fordelings- og værdipolitik, postmaterialisme, \
-Molins model, Kaare Strøm, medianvælgerteorien, partityper, \
-Sjøbloms partistrategier, marginalvælgere, kernevælgere, issuevoting, \
-Columbia-skolen, Michigan-skolen, rational choice-model, \
-liberalisme, socialisme, konservatisme, \
-deltagelsesdemokrati, konkurrencedemokrati, deliberativt demokrati, \
-meritokrati, medborgerskab, medborgerskabstyper, \
-køn (formel og reel lighed), parlamentarisk styringskæde, valgmåder, \
-lovgivningsproces, magtformer (ressource, relation, strukturel, direkte, \
-indirekte, institutionel), magtdeling, regeringstyper, \
-medialisering, priming, framing, nyhedskriterier, gatekeeper-funktion, \
-RAS-model, kanyleteori, referencemodel, \
-forstærkelses- og mobiliseringshypotese
+SOCIOLOGI:
+Socialisering, dobbeltsocialisering, normer (formelle/uformelle), sanktioner, social kontrol,
+sociale roller, rollekonflikt, identitet (jeg, personlig, social, kollektiv), sociale grupper,
+social arv, mønsterbrydere, chanceulighed, social mobilitet,
+Giddens (senmodernitet, strukturation, adskillelse af tid og rum, udlejring, aftraditionalisering),
+Bourdieu (kapitaler, habitus), Honneth (anerkendelse, sfærer),
+Habermas (kommunikativ handlen, kolonisering af livsverden, herredømmefri dialog),
+Reckwitz (singularitetens tid), Beck (risikosamfund, valgbiografi, institutionaliseret individualisering),
+Ziehe (kulturel frisættelse, formbarhed, subjektivisering, ontologisering, potensering),
+køn som biologi, Parsons (instrumentel/ekspressiv), doing gender,
+Connell (hegemonisk maskulinitet, medvirkende/underordnede/undertrykte maskuliniteter),
+patriarkat, mental load, Hofstede (magtdistance, individualisme/kollektivisme,
+feminin/maskulin, usikkerhedsundvigelse, langtids-/korttidsorientering),
+struktur/aktør, majoritet, minoritet, segregation, Huntingtons civilisationsteori
 
-**Sociologi:**
-Socialisering, dobbeltsocialisering, normer (formelle/uformelle), \
-sanktioner, social kontrol, sociale roller, rollekonflikt, \
-identitet (jeg, personlig, social, kollektiv), sociale grupper, \
-social arv, mønsterbrydere, chanceulighed, social mobilitet, \
-Giddens (senmodernitet, strukturation, adskillelse af tid og rum, \
-udlejring af sociale relationer, aftraditionalisering), \
-Bourdieu (kapitaler, habitus), Honneth (anerkendelse, sfærer), \
-Habermas (kommunikativ handlen, kolonisering af livsverden, \
-herredømmefri dialog), Reckwitz (singularitetens tid), \
-Beck (risikosamfund, valgbiografi, institutionaliseret individualisering), \
-Ziehe (kulturel frisættelse, formbarhed, subjektivisering, \
-ontologisering, potensering), \
-køn som biologi, Parsons (instrumentel/ekspressiv), doing gender, \
-Connell (hegemonisk maskulinitet, medvirkende/underordnede/undertrykte \
-maskuliniteter), patriarkat, mental load, \
-Hofstede (magtdistance, individualistisk/kollektivistisk, \
-feminin/maskulin, usikkerhedsundvigelse, langtids-/korttidsorientering, \
-eftergivenhed/begrænsning), \
-struktur/aktør, majoritet, minoritet, segregation, \
+ØKONOMI:
+Gini-koefficient, BNP, fuld beskæftigelse, inflation, betalingsbalance,
+økonomisk kredsløb, høj-/lavkonjunktur, rente, konkurrenceevne, eksport, multiplikator,
+monetarisme, keynesianisme, Adam Smith (udbud/efterspørgsel, markedsmekanismen),
+finanspolitik (automatiske stabilisatorer, crowding out), pengepolitik, strukturpolitik,
+valutapolitik (revaluering, devaluering, ERM2), flexicurity, arbejdsmarkedspolitik,
+ledighed (skifte/hjemsendelse/sæson/konjunktur/strukturel), lønspredning, indkomstpolitik,
+priselasticitet, udbud og efterspørgsel, afgifter, regulering,
+økonomiske systemer (planøkonomi, markedsøkonomi, blandingsøkonomi),
+velfærdsmodeller (skandinavisk, centraleuropæisk, liberal), civilsamfund, marked, stat
+
+INTERNATIONAL POLITIK:
+EU-organer (Kommissionen, Det Europæiske Råd, EU-Parlamentet, EU-Domstolen, Ministerrådet),
+mellemstatsligt/overstatsligt, føderation, konføderation,
+integrationsteorier (føderalisme, neofunktionalisme, liberal intergovernmentalisme, multilevel governance),
+direktiv, forordning, politisk/kulturel/økonomisk globalisering,
+amerikanisering, monokultur, WTO, NATO, velfærdsstatens udfordringer (globalisering, social dumping),
 Huntingtons civilisationsteori
 
-**Økonomi:**
-Økonomiske mål (udligning af sociale forskelle, Gini-koefficient, \
-vækst/BNP, fuld beskæftigelse, lav inflation, \
-betalingsbalance, klima og miljø), \
-økonomisk kredsløb, høj-/lavkonjunktur, rente, konkurrenceevne, \
-eksport, multiplikator, \
-monetarisme, keynesianisme, Adam Smith, \
-finanspolitik (automatiske stabilisatorer, crowding out), \
-pengepolitik, strukturpolitik, \
-valutapolitik (revaluering, devaluering, flydende/fast kurs, ERM2), \
-flexicurity, arbejdsmarkedspolitik, arbejdsstyrken, \
-ledighed (register/AKU, skifte/hjemsendelse/sæson/konjunktur/struktur), \
-lønspredning, indkomstpolitik, \
-udbud, efterspørgsel, afgifter, regulering, priselasticitet, \
-økonomiske systemer (plan-/markeds-/blandingsøkonomi), \
-velfærdsmodeller (skandinavisk, centraleuropæisk, liberal), \
-civilsamfund, marked, stat
+METODE:
+Kvalitativ og kvantitativ metode, hypoteser, operationalisering, validitet,
+komparativ metode, casestudier\
+"""
 
-**International politik:**
-EU-organer (Kommissionen, Det Europæiske Råd, EU-Parlamentet, \
-EU-Domstolen, Ministerrådet), mellemstatsligt/overstatsligt, \
-føderation, konføderation, \
-integrationsteorier (føderalisme, neofunktionalisme, \
-liberal intergovernmentalisme, multilevel governance), \
-direktiv, forordning, lovgivningsproces i EU, \
-politisk/kulturel/økonomisk globalisering, \
-amerikanisering, monokultur, WTO, NATO, \
-velfærdsstatens udfordringer (ældrebyrde, forventningspres, \
-globalisering, outsourcing, social dumping), \
-velfærdsstrategier (udvidelse/nedskæring), \
-Huntingtons civilisationsteori
+# ─── Skim prompt (batch headline filtering) ───────────────────────────────────
 
-**Metode:**
-Kvalitativ og kvantitativ metode, spørgsmålsformulering, \
-hypoteser, operationalisering, validitet, \
-komparativ metode, casestudier
+SKIM_SYSTEM_PROMPT = (
+    "Du er en erfaren samfundsfagslærer (stx) der hurtigt skimmer nyhedsoverskrifter for at finde "
+    "artikler der kan bruges som undervisningsmateriale.\n\n"
+    "Du leder efter artikler der kan bruges som GENSTANDSFELT for analyse med fagets teorier og begreber:\n"
+    + _CURRICULUM
+    + "\n\nVær SELEKTIV. Vælg kun overskrifter der umiddelbart signalerer at artiklen kan analyseres med "
+    "konkrete faglige begreber. Afvis artikler om sport, underholdning, vejr, kriminalitet uden "
+    "samfundsmæssig dimension, og lokalnyheder uden overordnet relevans.\n\n"
+    "Du svarer KUN med valid JSON. Ingen anden tekst."
+)
 
-Scoring-kriterier (baseret på analytisk brugbarhed som genstandsfelt):
-- 9-10: Oplagt genstandsfelt. Artiklen kan direkte analyseres med \
-mindst 2-3 konkrete teorier/begreber. Ideel som eksamenscase eller \
-undervisningseksempel.
-- 7-8: Godt genstandsfelt. Artiklen kan analyseres med mindst 1-2 \
-teorier/begreber og illustrerer tydelige faglige problemstillinger.
-- 5-6: Muligt genstandsfelt. Artiklen berører faglige emner men \
-kræver en del fortolkning for at koble til konkrete begreber.
-- 3-4: Svagt genstandsfelt. Kun overfladisk kobling til fagets \
-begreber. Begrænset analytisk potentiale.
-- 1-2: Ikke brugbart som genstandsfelt for Samfundsfag A.
 
-I din forklaring SKAL du nævne 1-3 konkrete teorier eller begreber \
-fra listen ovenfor som artiklen kan analyseres med.
+def build_skim_prompt(headlines: list[dict]) -> str:
+    """Build prompt for quick headline filtering."""
+    lines = []
+    for i, h in enumerate(headlines):
+        teaser = f" — {h['teaser']}" if h.get("teaser") else ""
+        lines.append(f"{i}: {h['title']}{teaser}")
 
-Du svarer KUN med valid JSON. Ingen anden tekst."""
+    return (
+        f"Her er {len(headlines)} nyhedsoverskrifter fra en dansk/international nyhedsside.\n"
+        "Vælg de overskrifter der sandsynligvis kan bruges som genstandsfelt i Samfundsfag A.\n\n"
+        + "\n".join(lines)
+        + '\n\nSvar med JSON:\n{"relevant_indices": [<liste af indeksnumre der er værd at læse>]}'
+    )
+
+
+# ─── Deep-read prompt (full article scoring) ──────────────────────────────────
+
+DEEP_READ_SYSTEM_PROMPT = (
+    "Du er en erfaren samfundsfagslærer (stx) der vurderer om en nyhedsartikel kan bruges som "
+    "GENSTANDSFELT for analyse i undervisningen.\n\n"
+    + _CURRICULUM
+    + "\n\nDIN OPGAVE:\n"
+    "Læs artiklen grundigt og vurder om elever kan bruge den som udgangspunkt for en faglig analyse. "
+    "En god artikel er en hvor eleverne kan ANVENDE konkrete teorier og begreber – ikke bare nævne dem.\n\n"
+    "STRENGE KRITERIER:\n"
+    "- En artikel om en virksomheds overskud er IKKE økonomi-relevant, medmindre den kan analyseres "
+    "med f.eks. markedsmekanismen, priselasticitet eller monetarisme.\n"
+    "- En artikel om krig er IKKE automatisk international politik – den skal give mulighed for at "
+    "anvende f.eks. integrationsteorier, NATO-analyse eller globaliseringsbegrebet analytisk.\n"
+    "- En artikel om ulighed er IKKE sociologi, medmindre den giver grundlag for at anvende f.eks. "
+    "Bourdieu, social mobilitet eller Gini-koefficienten konkret.\n"
+    "- Vær KRITISK. De fleste nyheder er IKKE gode undervisningsartikler (score 1-4).\n"
+    "- Score 7+ kræver at du kan beskrive en KONKRET analyse-opgave eleven kan lave.\n\n"
+    "SCORINGSSKALA:\n"
+    "- 9-10: Oplagt undervisningsartikel. Klar kobling til 2+ teorier. Kan bruges direkte som eksamenscase.\n"
+    "- 7-8: God artikel. Tydelig kobling til mindst 1 teori med konkret analytisk potentiale.\n"
+    "- 5-6: Mulig artikel. Kræver fortolkning. Begrænset analytisk dybde.\n"
+    "- 3-4: Svag kobling. Kun overfladisk relation til fagets begreber.\n"
+    "- 1-2: Ikke brugbar som undervisningsmateriale i Samfundsfag A.\n\n"
+    "I 'explanation' SKAL du:\n"
+    "1. Nævne 1-3 SPECIFIKKE teorier/begreber der kan APPLICERES (ikke blot nævnes)\n"
+    "2. Beskrive HVAD eleverne konkret kan analysere med disse begreber\n"
+    "3. Hvis score < 5: forklare HVORFOR artiklen ikke er god nok\n\n"
+    "Du svarer KUN med valid JSON. Ingen anden tekst."
+)
+
+
+def build_deep_read_prompt(
+    title: str, text: str, source: str, language: str
+) -> str:
+    """Build prompt for deep article scoring."""
+    lang_note = ""
+    if language == "en":
+        lang_note = (
+            " (Artiklen er på engelsk – vurder relevans for dansk "
+            "Samfundsfag A, herunder komparativt perspektiv.)"
+        )
+
+    return (
+        f"Vurder denne artikel fra {source}{lang_note} som potentielt undervisningsmateriale:\n\n"
+        f"Titel: {title}\n\n"
+        f"Artikeltekst:\n{text[:5000]}\n\n"
+        "Svar med dette JSON-format:\n"
+        "{\n"
+        '  "overall_score": <1-10>,\n'
+        '  "disciplines": {\n'
+        '    "sociologi": <0-10>,\n'
+        '    "politik": <0-10>,\n'
+        '    "okonomi": <0-10>,\n'
+        '    "international_politik": <0-10>,\n'
+        '    "metode": <0-10>\n'
+        "  },\n"
+        '  "primary_discipline": "<sociologi|politik|okonomi|international_politik|metode>",\n'
+        '  "explanation": "<Hvilke konkrete teorier kan eleverne anvende, og hvad kan de analysere?>"\n'
+        "}"
+    )
+
+
+# ─── Backwards-compat aliases (used by ollama/claude backends) ────────────────
+
+SYSTEM_PROMPT = DEEP_READ_SYSTEM_PROMPT
 
 
 def build_scoring_prompt(
     title: str, text: str, source: str, language: str
 ) -> str:
-    """Build the user prompt for scoring a single article."""
-    lang_note = ""
-    if language == "en":
-        lang_note = (
-            " (Artiklen er på engelsk -- vurder relevans for dansk "
-            "Samfundsfag A-undervisning, herunder komparativt perspektiv.)"
-        )
+    return build_deep_read_prompt(title, text, source, language)
 
-    return f"""Vurder denne nyhedsartikel fra {source}{lang_note}:
 
-Titel: {title}
-
-Indhold:
-{text[:2000]}
-
-Svar med dette JSON-format:
-{{
-  "overall_score": <1-10>,
-  "disciplines": {{
-    "sociologi": <0-10>,
-    "politik": <0-10>,
-    "okonomi": <0-10>,
-    "international_politik": <0-10>,
-    "metode": <0-10>
-  }},
-  "primary_discipline": "<sociologi|politik|okonomi|international_politik|metode>",
-  "explanation": "<1-2 sætninger: hvilke konkrete teorier/begreber kan artiklen analyseres med?>"
-}}"""
-
+# ─── Response parser ──────────────────────────────────────────────────────────
 
 def parse_scoring_response(
     raw: str, article_url: str, backend: str = "ollama"
 ) -> ScoringResult | None:
     """Parse JSON response from LLM into a ScoringResult."""
     try:
-        data = json.loads(raw)
+        text = raw.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0]
+        data = json.loads(text)
         return ScoringResult(
             article_url=article_url,
             overall_score=int(data["overall_score"]),

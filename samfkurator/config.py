@@ -21,14 +21,26 @@ class OllamaConfig:
 
 @dataclass
 class ClaudeConfig:
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-haiku-4-5-20251001"
+
+
+@dataclass
+class GeminiConfig:
+    model: str = "gemini-2.0-flash"
+
+
+@dataclass
+class DeepSeekConfig:
+    model: str = "deepseek-chat"
 
 
 @dataclass
 class AIConfig:
-    backend: str = "ollama"
+    backend: str = "gemini"
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
     claude: ClaudeConfig = field(default_factory=ClaudeConfig)
+    gemini: GeminiConfig = field(default_factory=GeminiConfig)
+    deepseek: DeepSeekConfig = field(default_factory=DeepSeekConfig)
 
 
 @dataclass
@@ -66,6 +78,13 @@ class DatabaseConfig:
 
 
 @dataclass
+class AgentSourceConfig:
+    name: str
+    url: str
+    language: str = "da"
+
+
+@dataclass
 class ScrapeSourceConfig:
     name: str
     urls: list[str]
@@ -80,6 +99,7 @@ class Config:
     sources_danish: list[SourceConfig] = field(default_factory=list)
     sources_international: list[SourceConfig] = field(default_factory=list)
     scrape_sources: list[ScrapeSourceConfig] = field(default_factory=list)
+    agent_sources: list[AgentSourceConfig] = field(default_factory=list)
     scraping: ScrapingConfig = field(default_factory=ScrapingConfig)
     scoring: ScoringConfig = field(default_factory=ScoringConfig)
     daily: DailyConfig = field(default_factory=DailyConfig)
@@ -115,9 +135,11 @@ def load_config(path: str | None = None) -> Config:
     # Parse AI config
     ai_raw = raw.get("ai", {})
     ai = AIConfig(
-        backend=ai_raw.get("backend", "ollama"),
+        backend=ai_raw.get("backend", "gemini"),
         ollama=OllamaConfig(**ai_raw.get("ollama", {})),
         claude=ClaudeConfig(**ai_raw.get("claude", {})),
+        gemini=GeminiConfig(**ai_raw.get("gemini", {})),
+        deepseek=DeepSeekConfig(**ai_raw.get("deepseek", {})),
     )
 
     # Parse sources
@@ -134,6 +156,11 @@ def load_config(path: str | None = None) -> Config:
         ScrapeSourceConfig(**s) for s in raw.get("scrape_sources", [])
     ]
 
+    # Parse agent sources
+    agent_sources = [
+        AgentSourceConfig(**s) for s in raw.get("agent_sources", [])
+    ]
+
     # Parse simple configs
     scraping = ScrapingConfig(**raw.get("scraping", {}))
     scoring = ScoringConfig(**raw.get("scoring", {}))
@@ -146,6 +173,7 @@ def load_config(path: str | None = None) -> Config:
         sources_danish=danish,
         sources_international=international,
         scrape_sources=scrape_sources,
+        agent_sources=agent_sources,
         scraping=scraping,
         scoring=scoring,
         daily=daily,

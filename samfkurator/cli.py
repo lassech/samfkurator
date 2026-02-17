@@ -35,17 +35,33 @@ def _fetch_and_score(args, config, db, console):
     all_sources = config.get_all_sources()
     articles = fetch_all_sources(all_sources, config.scraping.max_articles_per_feed)
 
-    # 1b. Scrape sites without RSS
+    # 1b. Old BeautifulSoup scraper (fallback if scrape_sources configured)
     if config.scrape_sources:
         from samfkurator.sources.scraper import scrape_all_sources
 
-        console.print("[bold]Scraper Politiken, Berlingske, JP...[/bold]")
+        console.print("[bold]Scraper med BeautifulSoup...[/bold]")
         scraped = scrape_all_sources(
             config.scrape_sources,
             max_per_site=config.scraping.max_articles_per_feed,
             delay=config.scraping.request_delay_seconds,
         )
         articles.extend(scraped)
+
+    # 1c. Agent browser (to-trins: skim + deep-read med bypass-paywalls)
+    if config.agent_sources:
+        from samfkurator.agent.curator import run_agent
+        backend_name = getattr(args, "backend", None) or config.ai.backend
+        console.print(
+            f"[bold]Agent browser starter ({backend_name})...[/bold]"
+        )
+        run_agent(
+            [{"name": s.name, "url": s.url, "language": s.language}
+             for s in config.agent_sources],
+            db=db,
+            backend_name=backend_name,
+            console=console,
+            min_score=config.scoring.min_score_to_display,
+        )
 
     # 2. Filter already-scored articles
     new_articles = [a for a in articles if not db.has_score(a.url)]
@@ -123,7 +139,7 @@ def main():
         "--count", type=int, help="Antal artikler (default: 10)"
     )
     daily_parser.add_argument(
-        "--backend", choices=["ollama", "claude"],
+        "--backend", choices=["ollama", "claude", "gemini", "deepseek"],
         help="AI backend (overrides config)",
     )
     daily_parser.add_argument(
