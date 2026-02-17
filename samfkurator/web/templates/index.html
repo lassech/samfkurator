@@ -156,11 +156,78 @@
         .source-name { color: #94a3b8; white-space: nowrap; }
         .explanation { color: #94a3b8; font-size: 0.8rem; max-width: 300px; }
         .date-cell { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
+
+        /* Must-reads */
+        .must-reads-section { margin-bottom: 2rem; }
+        .must-reads-section h2 {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.75rem;
+        }
+        .must-reads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.6rem;
+        }
+        .must-read-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-left: 3px solid #334155;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .must-read-card.disc-sociologi { border-left-color: #a855f7; }
+        .must-read-card.disc-politik { border-left-color: #ef4444; }
+        .must-read-card.disc-okonomi { border-left-color: #22c55e; }
+        .must-read-card.disc-international_politik { border-left-color: #3b82f6; }
+        .must-read-card.disc-metode { border-left-color: #eab308; }
+        .must-read-card a {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.88rem;
+            line-height: 1.35;
+        }
+        .must-read-card a:hover { color: #38bdf8; }
+        .must-read-meta { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
+        .must-read-score { font-weight: 700; color: #4ade80; }
+        .must-read-source { color: #64748b; }
+        .must-read-explanation { color: #64748b; font-size: 0.77rem; line-height: 1.4; }
+        hr.section-divider { border: none; border-top: 1px solid #1e293b; margin: 1.5rem 0; }
     </style>
 </head>
 <body>
     <h1>Samfkurator</h1>
     <p class="subtitle">Nyhedsrelevans for Samfundsfag A (stx)</p>
+
+    {% if must_reads %}
+    <div class="must-reads-section">
+        <h2>Dagens {{ must_reads|length }} must-reads</h2>
+        <div class="must-reads-grid">
+            {% for a in must_reads %}
+            <div class="must-read-card disc-{{ a.discipline }}">
+                <a href="{{ a.url }}" target="_blank">{{ a.title }}</a>
+                <div class="must-read-meta">
+                    <span class="must-read-score">{{ a.score }}/10</span>
+                    <span class="badge badge-{{ a.discipline }}">{{ a.discipline_label }}</span>
+                    <span class="must-read-source">{{ a.source }}</span>
+                    {% if a.language == 'en' %}<span class="lang-tag">EN</span>{% endif %}
+                </div>
+                {% if a.explanation %}
+                <div class="must-read-explanation">{{ a.explanation }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <hr class="section-divider">
+    {% endif %}
 
     <div class="filters">
         <div class="filter-group">

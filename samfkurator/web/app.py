@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from flask import Flask, render_template, request
 
 from samfkurator.config import load_config
 from samfkurator.db import Database
+from samfkurator.output.daily import select_daily
 
 app = Flask(__name__)
 
@@ -28,7 +29,26 @@ def index():
     date_to = request.args.get("date_to", "")
 
     rows = db.get_scored_articles(min_score=min_score, limit=500)
+
+    # Must-reads: top 10 fra i dag (eller seneste hvis ingen i dag)
+    today_rows = db.get_todays_scored_articles(min_score=5)
+    if not today_rows:
+        today_rows = db.get_scored_articles(min_score=5, limit=100)
+    must_reads_raw = select_daily(today_rows, config.daily)
+
     db.close()
+
+    must_reads = []
+    for row in must_reads_raw:
+        title, source_name, url, published, language, score, disc, explanation, soc, pol, oko, ip, met = row
+        must_reads.append({
+            "title": title, "source": source_name, "url": url,
+            "published_date": (published or "")[:10],
+            "language": language, "score": score,
+            "discipline": disc,
+            "discipline_label": DISCIPLINE_NAMES.get(disc, disc or "?"),
+            "explanation": explanation or "",
+        })
 
     articles = []
     sources_set = set()
@@ -72,6 +92,7 @@ def index():
     return render_template(
         "index.html",
         articles=articles,
+        must_reads=must_reads,
         sources=sorted(sources_set),
         disciplines=DISCIPLINE_NAMES,
         current_min_score=min_score,
