@@ -53,19 +53,7 @@ sources:
       paywall: false
       language: "en"
 
-    - name: "Financial Times"
-      feeds:
-        - "https://www.ft.com/rss/home"
-      paywall: true
-      language: "en"
-
-    - name: "New York Times"
-      feeds:
-        - "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
-        - "https://rss.nytimes.com/services/xml/rss/nyt/Europe.xml"
-        - "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"
-      paywall: true
-      language: "en"
+    # FT og NYT læses via agent-browser med bypass-paywalls (fuld tekst)
 
 # Agent-browser kilder (bypass-paywalls + fuld tekst + to-trins vurdering)
 agent_sources:
@@ -87,6 +75,18 @@ agent_sources:
   - name: "Jyllands-Posten"
     url: "https://jyllands-posten.dk/international"
     language: "da"
+  - name: "Financial Times"
+    url: "https://www.ft.com/world"
+    language: "en"
+  - name: "Financial Times"
+    url: "https://www.ft.com/economics"
+    language: "en"
+  - name: "New York Times"
+    url: "https://www.nytimes.com/section/world"
+    language: "en"
+  - name: "New York Times"
+    url: "https://www.nytimes.com/section/business/economy"
+    language: "en"
 
 # Gammel BeautifulSoup-scraper (bruges ikke længere - erstattet af agent)
 scrape_sources: []
