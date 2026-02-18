@@ -1,5 +1,6 @@
 """Playwright-based browser with bypass-paywalls extension for full article access."""
 
+import random
 import time
 from pathlib import Path
 
@@ -69,8 +70,8 @@ class ArticleBrowser:
         Open a news site and extract visible headlines with teasers.
         Returns list of {title, teaser, url} dicts.
         """
-        self._page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        time.sleep(wait_ms / 1000)
+        self._page.goto(url, wait_until="load", timeout=30000)
+        time.sleep(wait_ms / 1000 + random.uniform(0.5, 2.0))
         self._accept_cookies()
 
         headlines = self._page.evaluate("""() => {
@@ -125,7 +126,7 @@ class ArticleBrowser:
         Returns the article text.
         """
         self._page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        time.sleep(wait_ms / 1000)
+        time.sleep(wait_ms / 1000 + random.uniform(0.5, 2.5))
         self._accept_cookies()
 
         text = self._page.evaluate("""() => {

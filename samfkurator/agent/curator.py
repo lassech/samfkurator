@@ -6,6 +6,8 @@ Two-pass approach:
   2. Deep-read: Browser opens each candidate; LLM reads full text and scores
 """
 
+import random
+import time
 from datetime import datetime
 
 from rich.console import Console
@@ -38,6 +40,7 @@ def run_agent(
     backend_name: str = "gemini",
     console: Console | None = None,
     min_score: int = 5,
+    jitter_minutes: int = 20,
 ) -> int:
     """
     Run the agent on a list of news sites.
@@ -48,6 +51,14 @@ def run_agent(
     """
     if console is None:
         console = Console()
+
+    # Random startup delay so scraping never happens at exactly the same time
+    if jitter_minutes > 0:
+        delay = random.uniform(0, jitter_minutes * 60)
+        console.print(
+            f"[dim]Starter om {delay/60:.1f} min (jitter)...[/dim]"
+        )
+        time.sleep(delay)
 
     backend = _create_backend(backend_name)
     saved = 0
@@ -71,7 +82,7 @@ def run_agent(
                 console.print(f"  [dim]Ingen overskrifter fundet på {name}[/dim]")
                 continue
 
-            console.print(f"  Fandt {len(headlines)} overskrifter. Filtrerer...")
+            console.print(f"  Fandt {len(headlines)} overskrifter. Filtrerer med LLM...")
 
             # LLM picks which headlines are worth reading
             if hasattr(backend, "skim"):
@@ -95,9 +106,15 @@ def run_agent(
                 continue
 
             # ── Pass 2: Deep-read each candidate ─────────────────────────────
-            for candidate in candidates:
+            for i, candidate in enumerate(candidates):
                 art_url = candidate["url"]
                 title = candidate["title"]
+
+                # Random delay between articles (skip before first)
+                if i > 0:
+                    delay = random.uniform(4.0, 10.0)
+                    console.print(f"  [dim]Venter {delay:.1f}s...[/dim]")
+                    time.sleep(delay)
 
                 console.print(f"  [dim]Læser:[/dim] {title[:70]}...")
 
@@ -111,6 +128,7 @@ def run_agent(
                     console.print("    [dim]For lidt tekst - springer over[/dim]")
                     continue
 
+                now = datetime.now()
                 article = Article(
                     url=art_url,
                     title=title,
@@ -119,7 +137,8 @@ def run_agent(
                     full_text=full_text,
                     language=language,
                     has_paywall=False,  # bypass-paywalls handles it
-                    fetched_at=datetime.now(),
+                    published=now,
+                    fetched_at=now,
                 )
 
                 result = backend.score_article(article)
@@ -142,6 +161,11 @@ def run_agent(
                     console.print(
                         f"    [dim]✗ Score {score}/10 — ikke relevant nok[/dim]"
                     )
+
+            # Pause between sites
+            site_delay = random.uniform(15.0, 30.0)
+            console.print(f"  [dim]Pause mellem sites: {site_delay:.0f}s[/dim]")
+            time.sleep(site_delay)
 
     console.print(
         f"\n[bold green]Agent færdig. {saved} artikler gemt.[/bold green]"

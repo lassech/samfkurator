@@ -1,12 +1,15 @@
+import os
 from datetime import datetime
+from functools import wraps
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for
 
 from samfkurator.config import load_config
 from samfkurator.db import Database
 from samfkurator.output.daily import select_daily
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "skift-denne-noegle")
 
 DISCIPLINE_NAMES = {
     "sociologi": "Sociologi",
@@ -17,7 +20,38 @@ DISCIPLINE_NAMES = {
 }
 
 
+def _get_password():
+    return os.environ.get("FLASK_PASSWORD", "")
+
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if _get_password() and not session.get("authenticated"):
+            return redirect(url_for("login", next=request.url))
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        if request.form.get("password") == _get_password():
+            session["authenticated"] = True
+            return redirect(request.args.get("next") or url_for("index"))
+        error = "Forkert adgangskode"
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/")
+@login_required
 def index():
     config = load_config()
     db = Database(config.database.path)

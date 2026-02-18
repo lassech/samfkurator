@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -167,6 +168,8 @@ def load_config(path: str | None = None) -> Config:
     daily = DailyConfig(**raw.get("daily", {}))
     output = OutputConfig(**raw.get("output", {}))
     database = DatabaseConfig(**raw.get("database", {}))
+    if os.environ.get("DATABASE_PATH"):
+        database.path = os.environ["DATABASE_PATH"]
 
     return Config(
         ai=ai,

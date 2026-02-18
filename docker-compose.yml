@@ -1,0 +1,22 @@
+services:
+  web:
+    build: .
+    ports:
+      - "127.0.0.1:5001:5001"
+    volumes:
+      - ./data:/data
+    env_file: .env
+    environment:
+      - DATABASE_PATH=/data/samfkurator.db
+    restart: unless-stopped
+    command: gunicorn samfkurator.web.app:app --bind 0.0.0.0:5001 --workers 2
+
+  agent:
+    build: .
+    volumes:
+      - ./data:/data
+    env_file: .env
+    environment:
+      - DATABASE_PATH=/data/samfkurator.db
+    profiles: ["agent"]
+    command: samfkurator daily --backend deepseek
