@@ -53,7 +53,15 @@ sources:
       paywall: false
       language: "en"
 
-    # FT og NYT læses via agent-browser med bypass-paywalls (fuld tekst)
+    - name: "New York Times"
+      feeds:
+        - "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+        - "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"
+      paywall: true
+      language: "en"
+
+    # FT læses via agent-browser med bypass-paywalls (fuld tekst)
+    # NYT flyttes til RSS da bypass-paywalls ikke virker i Docker
 
 # Agent-browser kilder (bypass-paywalls + fuld tekst + to-trins vurdering)
 agent_sources:
@@ -67,10 +75,13 @@ agent_sources:
     url: "https://politiken.dk/danmark/"
     language: "da"
   - name: "Berlingske"
-    url: "https://www.berlingske.dk"
+    url: "https://www.berlingske.dk/verden"
+    language: "da"
+  - name: "Berlingske"
+    url: "https://www.berlingske.dk/politik"
     language: "da"
   - name: "Jyllands-Posten"
-    url: "https://jyllands-posten.dk/politik"
+    url: "https://jyllands-posten.dk/indland"
     language: "da"
   - name: "Jyllands-Posten"
     url: "https://jyllands-posten.dk/international"
@@ -80,12 +91,6 @@ agent_sources:
     language: "en"
   - name: "Financial Times"
     url: "https://www.ft.com/economics"
-    language: "en"
-  - name: "New York Times"
-    url: "https://www.nytimes.com/section/world"
-    language: "en"
-  - name: "New York Times"
-    url: "https://www.nytimes.com/section/business/economy"
     language: "en"
   - name: "Weekendavisen"
     url: "https://www.weekendavisen.dk/samfund"
