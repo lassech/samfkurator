@@ -3,213 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Samfkurator - Nyhedsrelevans for Samfundsfag A</title>
+    <title>Samfkurator</title>
     <script defer src="https://umami.poltest.dk/script.js" data-website-id="f78c9ce5-b8ed-4cbf-ad3f-da20f0796809"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: #0f172a;
-            color: #e2e8f0;
-            padding: 1.5rem;
-        }
-        h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.25rem;
-            color: #38bdf8;
-        }
-        .subtitle {
-            color: #64748b;
-            font-size: 0.85rem;
-            margin-bottom: 1.5rem;
+            color: #cbd5e1;
+            padding: 2rem 2.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        /* Filters */
+        h1 { font-size: 1.25rem; color: #38bdf8; margin-bottom: 0.2rem; }
+        .subtitle { color: #475569; font-size: 0.8rem; margin-bottom: 2rem; }
+
+        /* ── Filters ── */
         .filters {
             display: flex;
             gap: 1rem;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
             align-items: flex-end;
         }
-        .filters label {
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
+        .filter-group { display: flex; flex-direction: column; gap: 0.2rem; }
+        .filters label { font-size: 0.72rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; }
         .filters select, .filters input {
             background: #1e293b;
-            color: #e2e8f0;
+            color: #cbd5e1;
             border: 1px solid #334155;
-            border-radius: 6px;
-            padding: 0.4rem 0.6rem;
-            font-size: 0.85rem;
+            border-radius: 5px;
+            padding: 0.35rem 0.6rem;
+            font-size: 0.82rem;
         }
-        .filters input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.7);
-        }
-        .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
-        .filter-dates {
-            display: flex;
-            gap: 0.4rem;
-            align-items: center;
-        }
-        .filter-dates .sep { color: #64748b; font-size: 0.8rem; }
-        .count { color: #64748b; font-size: 0.85rem; margin-left: auto; }
-        .btn-today {
-            background: #334155;
-            color: #94a3b8;
-            border: 1px solid #475569;
-            border-radius: 6px;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.8rem;
+        .filters input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+        .filter-dates { display: flex; gap: 0.4rem; align-items: center; }
+        .filter-dates .sep { color: #475569; font-size: 0.8rem; }
+        .count { color: #475569; font-size: 0.8rem; margin-left: auto; align-self: flex-end; }
+        .btn {
+            background: transparent;
+            color: #64748b;
+            border: 1px solid #334155;
+            border-radius: 5px;
+            padding: 0.35rem 0.65rem;
+            font-size: 0.78rem;
             cursor: pointer;
         }
-        .btn-today:hover { background: #475569; color: #e2e8f0; }
+        .btn:hover { color: #cbd5e1; border-color: #64748b; }
 
-        /* Table */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        thead { position: sticky; top: 0; z-index: 10; }
-        th {
-            background: #1e293b;
-            padding: 0.6rem 0.75rem;
-            text-align: left;
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-            border-bottom: 2px solid #334155;
-            color: #94a3b8;
-            font-weight: 600;
-        }
-        th:hover { color: #38bdf8; }
-        th .sort-arrow { margin-left: 0.3rem; font-size: 0.7rem; }
-        td {
-            padding: 0.5rem 0.75rem;
-            border-bottom: 1px solid #1e293b;
-            vertical-align: top;
-        }
-        tr:hover { background: #1e293b; }
-
-        /* Score */
-        .score {
-            font-weight: 700;
-            font-size: 1.1rem;
-            text-align: center;
-            width: 3rem;
-        }
-        .score-high { color: #4ade80; }
-        .score-mid { color: #facc15; }
-        .score-low { color: #64748b; }
-
-        /* Score bar */
-        .score-bar {
-            display: flex;
-            gap: 2px;
-            margin-top: 0.2rem;
-        }
-        .score-bar span {
-            width: 8px;
-            height: 8px;
-            border-radius: 2px;
-            background: #334155;
-        }
-        .score-bar span.filled { background: #38bdf8; }
-
-        /* Discipline badge */
-        .badge {
-            display: inline-block;
-            padding: 0.15rem 0.5rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        .badge-sociologi { background: #581c87; color: #e9d5ff; }
-        .badge-politik { background: #7f1d1d; color: #fecaca; }
-        .badge-okonomi { background: #14532d; color: #bbf7d0; }
-        .badge-international_politik { background: #1e3a5f; color: #bfdbfe; }
-        .badge-metode { background: #713f12; color: #fef08a; }
-
-        /* Sub-scores */
-        .sub-scores {
-            display: flex;
-            gap: 0.4rem;
-            font-size: 0.75rem;
-            color: #64748b;
-        }
-        .sub-scores span { white-space: nowrap; }
-
-        /* Title link */
-        a.article-link {
-            color: #e2e8f0;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        a.article-link:hover { color: #38bdf8; text-decoration: underline; }
-        .lang-tag {
-            font-size: 0.7rem;
-            color: #64748b;
-            margin-left: 0.3rem;
-        }
-        .source-name { color: #94a3b8; white-space: nowrap; }
-        .explanation { color: #94a3b8; font-size: 0.8rem; max-width: 300px; }
-        .date-cell { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
-
-        /* Must-reads */
+        /* ── Must-reads ── */
         .must-reads-section { margin-bottom: 2rem; }
-        .must-reads-section h2 {
-            font-size: 0.8rem;
-            color: #64748b;
-            font-weight: 600;
+        .section-label {
+            font-size: 0.7rem;
+            color: #475569;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             margin-bottom: 0.75rem;
         }
         .must-reads-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 0.6rem;
         }
         .must-read-card {
             background: #1e293b;
-            border: 1px solid #334155;
+            border: 1px solid #1e293b;
             border-left: 3px solid #334155;
-            border-radius: 8px;
+            border-radius: 6px;
             padding: 0.75rem 1rem;
             display: flex;
             flex-direction: column;
-            gap: 0.35rem;
+            gap: 0.4rem;
         }
-        .must-read-card.disc-sociologi { border-left-color: #a855f7; }
-        .must-read-card.disc-politik { border-left-color: #ef4444; }
-        .must-read-card.disc-okonomi { border-left-color: #22c55e; }
+        .must-read-card.disc-sociologi      { border-left-color: #a855f7; }
+        .must-read-card.disc-politik        { border-left-color: #ef4444; }
+        .must-read-card.disc-okonomi        { border-left-color: #22c55e; }
         .must-read-card.disc-international_politik { border-left-color: #3b82f6; }
-        .must-read-card.disc-metode { border-left-color: #eab308; }
+        .must-read-card.disc-metode         { border-left-color: #eab308; }
         .must-read-card a {
             color: #e2e8f0;
             text-decoration: none;
             font-weight: 500;
-            font-size: 0.88rem;
-            line-height: 1.35;
+            font-size: 0.875rem;
+            line-height: 1.4;
         }
         .must-read-card a:hover { color: #38bdf8; }
-        .must-read-meta { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
-        .must-read-score { font-weight: 700; color: #4ade80; }
-        .must-read-source { color: #64748b; }
-        .must-read-explanation { color: #64748b; font-size: 0.77rem; line-height: 1.4; }
-        hr.section-divider { border: none; border-top: 1px solid #1e293b; margin: 1.5rem 0; }
+        .must-read-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .must-read-score { font-weight: 700; color: #4ade80; font-size: 0.8rem; }
+        .must-read-source { color: #475569; font-size: 0.75rem; }
+        .must-read-explanation { color: #64748b; font-size: 0.78rem; line-height: 1.45; }
+        .must-read-quote {
+            color: #475569;
+            font-size: 0.76rem;
+            font-style: italic;
+            line-height: 1.45;
+            border-left: 2px solid #334155;
+            padding-left: 0.5rem;
+        }
+        .must-read-concepts { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+        hr.divider { border: none; border-top: 1px solid #1e293b; margin: 1.5rem 0; }
+
+        /* ── Discipline badge ── */
+        .badge {
+            display: inline-block;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .badge-sociologi           { background: #2e1065; color: #c4b5fd; }
+        .badge-politik             { background: #450a0a; color: #fca5a5; }
+        .badge-okonomi             { background: #052e16; color: #86efac; }
+        .badge-international_politik { background: #0c1a2e; color: #93c5fd; }
+        .badge-metode              { background: #3a1a00; color: #fde68a; }
+
+        /* ── Concept tag ── */
+        .concept-tag {
+            display: inline-block;
+            background: #1e293b;
+            color: #64748b;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 0.1rem 0.4rem;
+            font-size: 0.7rem;
+        }
+
+        /* ── Article list ── */
+        .article-list { display: flex; flex-direction: column; gap: 0; }
+
+        .article-row {
+            display: grid;
+            grid-template-columns: 3rem 1fr auto;
+            gap: 0 1.25rem;
+            padding: 0.9rem 0;
+            border-bottom: 1px solid #1e293b;
+            align-items: start;
+        }
+        .article-row:hover { background: #111827; margin: 0 -0.75rem; padding-left: 0.75rem; padding-right: 0.75rem; border-radius: 4px; }
+
+        .score-col {
+            text-align: center;
+            padding-top: 0.1rem;
+        }
+        .score-num {
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .score-high { color: #4ade80; }
+        .score-mid  { color: #facc15; }
+        .score-low  { color: #64748b; }
+        .score-disc { margin-top: 0.35rem; }
+
+        .content-col { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+
+        .article-title {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .article-title:hover { color: #38bdf8; }
+        .lang-tag { font-size: 0.68rem; color: #475569; margin-left: 0.3rem; }
+
+        .article-explanation {
+            color: #64748b;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .article-quote {
+            color: #475569;
+            font-size: 0.78rem;
+            font-style: italic;
+            line-height: 1.45;
+            border-left: 2px solid #1e293b;
+            padding-left: 0.6rem;
+        }
+
+        .article-concepts { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+        .meta-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+            white-space: nowrap;
+            padding-top: 0.1rem;
+            min-width: 100px;
+        }
+        .meta-source { color: #64748b; font-size: 0.77rem; }
+        .meta-date   { color: #475569; font-size: 0.73rem; }
+
+        /* ── Sort bar ── */
+        .sort-bar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 0.5rem;
+        }
+        .sort-btn {
+            background: none;
+            border: none;
+            color: #475569;
+            font-size: 0.75rem;
+            cursor: pointer;
+            padding: 0;
+        }
+        .sort-btn.active { color: #38bdf8; }
+        .sort-btn:hover { color: #94a3b8; }
     </style>
 </head>
 <body>
     <h1>Samfkurator</h1>
-    <p class="subtitle">Nyhedsrelevans for Samfundsfag A (stx)</p>
+    <p class="subtitle">Nyhedsrelevans for Samfundsfag A (stx) &mdash; <a href="/logout" style="color:#334155;text-decoration:none;">log ud</a></p>
 
     {% if must_reads %}
     <div class="must-reads-section">
-        <h2>Dagens {{ must_reads|length }} must-reads</h2>
+        <p class="section-label">Dagens {{ must_reads|length }} must-reads</p>
         <div class="must-reads-grid">
             {% for a in must_reads %}
             <div class="must-read-card disc-{{ a.discipline }}">
@@ -220,14 +237,24 @@
                     <span class="must-read-source">{{ a.source }}</span>
                     {% if a.language == 'en' %}<span class="lang-tag">EN</span>{% endif %}
                 </div>
+                {% if a.concepts %}
+                <div class="must-read-concepts">
+                    {% for c in a.concepts.split(' · ') %}
+                    <span class="concept-tag">{{ c }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 {% if a.explanation %}
                 <div class="must-read-explanation">{{ a.explanation }}</div>
+                {% endif %}
+                {% if a.quote %}
+                <div class="must-read-quote">{{ a.quote }}</div>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
     </div>
-    <hr class="section-divider">
+    <hr class="divider">
     {% endif %}
 
     <div class="filters">
@@ -261,108 +288,71 @@
             <label>Periode</label>
             <div class="filter-dates">
                 <input type="date" id="filter-date-from" value="{{ current_date_from }}" max="{{ today }}">
-                <span class="sep">-</span>
+                <span class="sep">–</span>
                 <input type="date" id="filter-date-to" value="{{ current_date_to }}" max="{{ today }}">
             </div>
         </div>
-        <button class="btn-today" id="btn-today">I dag</button>
-        <button class="btn-today" id="btn-week">Seneste uge</button>
-        <button class="btn-today" id="btn-month">Seneste m&#229;ned</button>
-        <button class="btn-today" id="btn-reset">Nulstil</button>
+        <button class="btn" id="btn-today">I dag</button>
+        <button class="btn" id="btn-week">Uge</button>
+        <button class="btn" id="btn-month">Måned</button>
+        <button class="btn" id="btn-reset">Nulstil</button>
         <span class="count">{{ articles|length }} artikler</span>
     </div>
 
-    <table id="articles-table">
-        <thead>
-            <tr>
-                <th data-sort="score" data-type="num">Score <span class="sort-arrow">&#x25BC;</span></th>
-                <th data-sort="date" data-type="str">Dato <span class="sort-arrow"></span></th>
-                <th data-sort="source" data-type="str">Kilde <span class="sort-arrow"></span></th>
-                <th data-sort="title" data-type="str">Titel <span class="sort-arrow"></span></th>
-                <th data-sort="discipline" data-type="str">Disciplin <span class="sort-arrow"></span></th>
-                <th>Delscores</th>
-                <th data-sort="explanation" data-type="str">Begrundelse <span class="sort-arrow"></span></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for a in articles %}
-            <tr>
-                <td class="score {{ 'score-high' if a.score >= 8 else ('score-mid' if a.score >= 6 else 'score-low') }}"
-                    data-value="{{ a.score }}">
+    <div class="sort-bar">
+        <button class="sort-btn active" data-sort="score">Score ▾</button>
+        <button class="sort-btn" data-sort="date">Dato</button>
+        <button class="sort-btn" data-sort="source">Kilde</button>
+        <button class="sort-btn" data-sort="discipline">Disciplin</button>
+    </div>
+
+    <div class="article-list" id="article-list">
+        {% for a in articles %}
+        <div class="article-row"
+             data-score="{{ a.score }}"
+             data-date="{{ a.published_date }}"
+             data-source="{{ a.source }}"
+             data-discipline="{{ a.discipline }}">
+
+            <div class="score-col">
+                <div class="score-num {{ 'score-high' if a.score >= 8 else ('score-mid' if a.score >= 6 else 'score-low') }}">
                     {{ a.score }}
-                    <div class="score-bar">
-                        {% for i in range(10) %}
-                        <span class="{{ 'filled' if i < a.score }}"></span>
-                        {% endfor %}
-                    </div>
-                </td>
-                <td class="date-cell" data-value="{{ a.published_date }}">{{ a.published_date }}</td>
-                <td class="source-name" data-value="{{ a.source }}">{{ a.source }}</td>
-                <td data-value="{{ a.title }}">
-                    <a class="article-link" href="{{ a.url }}" target="_blank">{{ a.title }}</a>
-                    {% if a.language == 'en' %}<span class="lang-tag">EN</span>{% endif %}
-                </td>
-                <td data-value="{{ a.discipline }}">
+                </div>
+                <div class="score-disc">
                     <span class="badge badge-{{ a.discipline }}">{{ a.discipline_label }}</span>
-                </td>
-                <td>
-                    <div class="sub-scores">
-                        <span title="Sociologi">So:{{ a.soc }}</span>
-                        <span title="Politik">Po:{{ a.pol }}</span>
-                        <span title="Økonomi">Øk:{{ a.oko }}</span>
-                        <span title="Int. Politik">IP:{{ a.ip }}</span>
-                        <span title="Metode">Me:{{ a.met }}</span>
-                    </div>
-                </td>
-                <td class="explanation" data-value="{{ a.explanation }}">{{ a.explanation }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+
+            <div class="content-col">
+                <div>
+                    <a class="article-title" href="{{ a.url }}" target="_blank">{{ a.title }}</a>
+                    {% if a.language == 'en' %}<span class="lang-tag">EN</span>{% endif %}
+                </div>
+                {% if a.concepts %}
+                <div class="article-concepts">
+                    {% for c in a.concepts.split(' · ') %}
+                    <span class="concept-tag">{{ c }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if a.explanation %}
+                <div class="article-explanation">{{ a.explanation }}</div>
+                {% endif %}
+                {% if a.quote %}
+                <div class="article-quote">{{ a.quote }}</div>
+                {% endif %}
+            </div>
+
+            <div class="meta-col">
+                <span class="meta-source">{{ a.source }}</span>
+                <span class="meta-date">{{ a.published_date }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
     <script>
-        // Sortable columns
-        const table = document.getElementById('articles-table');
-        const headers = table.querySelectorAll('th[data-sort]');
-        let currentSort = { col: 'score', dir: 'desc' };
-
-        headers.forEach(th => {
-            th.addEventListener('click', () => {
-                const col = th.dataset.sort;
-                const type = th.dataset.type;
-                const dir = (currentSort.col === col && currentSort.dir === 'desc') ? 'asc' : 'desc';
-                currentSort = { col, dir };
-
-                headers.forEach(h => h.querySelector('.sort-arrow').textContent = '');
-                th.querySelector('.sort-arrow').textContent = dir === 'desc' ? '\u25BC' : '\u25B2';
-
-                const tbody = table.querySelector('tbody');
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-
-                rows.sort((a, b) => {
-                    const aCell = a.querySelector(`td:nth-child(${th.cellIndex + 1})`);
-                    const bCell = b.querySelector(`td:nth-child(${th.cellIndex + 1})`);
-                    let aVal = aCell.dataset.value || aCell.textContent.trim();
-                    let bVal = bCell.dataset.value || bCell.textContent.trim();
-
-                    if (type === 'num') {
-                        aVal = parseFloat(aVal) || 0;
-                        bVal = parseFloat(bVal) || 0;
-                    } else {
-                        aVal = aVal.toLowerCase();
-                        bVal = bVal.toLowerCase();
-                    }
-
-                    if (aVal < bVal) return dir === 'asc' ? -1 : 1;
-                    if (aVal > bVal) return dir === 'asc' ? 1 : -1;
-                    return 0;
-                });
-
-                rows.forEach(row => tbody.appendChild(row));
-            });
-        });
-
-        // Filters
+        // ── Filters ──────────────────────────────────────────────────────────
         function applyFilters() {
             const score = document.getElementById('filter-score').value;
             const discipline = document.getElementById('filter-discipline').value;
@@ -378,35 +368,68 @@
             window.location.search = params.toString();
         }
 
-        document.getElementById('filter-score').addEventListener('change', applyFilters);
-        document.getElementById('filter-discipline').addEventListener('change', applyFilters);
-        document.getElementById('filter-source').addEventListener('change', applyFilters);
-        document.getElementById('filter-date-from').addEventListener('change', applyFilters);
-        document.getElementById('filter-date-to').addEventListener('change', applyFilters);
+        ['filter-score','filter-discipline','filter-source','filter-date-from','filter-date-to']
+            .forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
 
-        // Quick buttons
         document.getElementById('btn-today').addEventListener('click', () => {
-            const today = '{{ today }}';
-            document.getElementById('filter-date-from').value = today;
-            document.getElementById('filter-date-to').value = today;
+            const t = '{{ today }}';
+            document.getElementById('filter-date-from').value = t;
+            document.getElementById('filter-date-to').value = t;
             applyFilters();
         });
 
-        function setDateRange(daysBack) {
-            const today = new Date();
-            const from = new Date(today);
-            from.setDate(from.getDate() - daysBack);
-            document.getElementById('filter-date-from').value = from.toISOString().slice(0, 10);
-            document.getElementById('filter-date-to').value = today.toISOString().slice(0, 10);
+        function setDays(n) {
+            const to = new Date(), from = new Date();
+            from.setDate(from.getDate() - n);
+            document.getElementById('filter-date-from').value = from.toISOString().slice(0,10);
+            document.getElementById('filter-date-to').value = to.toISOString().slice(0,10);
             applyFilters();
         }
+        document.getElementById('btn-week').addEventListener('click', () => setDays(7));
+        document.getElementById('btn-month').addEventListener('click', () => setDays(30));
+        document.getElementById('btn-reset').addEventListener('click', () => window.location.search = '');
 
-        document.getElementById('btn-week').addEventListener('click', () => setDateRange(7));
-        document.getElementById('btn-month').addEventListener('click', () => setDateRange(30));
+        // ── Sort ─────────────────────────────────────────────────────────────
+        let currentSort = { key: 'score', dir: 'desc' };
 
-        document.getElementById('btn-reset').addEventListener('click', () => {
-            window.location.search = '';
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.sort;
+                if (currentSort.key === key) {
+                    currentSort.dir = currentSort.dir === 'desc' ? 'asc' : 'desc';
+                } else {
+                    currentSort = { key, dir: key === 'score' ? 'desc' : 'asc' };
+                }
+                document.querySelectorAll('.sort-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.textContent = b.dataset.sort.charAt(0).toUpperCase() + b.dataset.sort.slice(1);
+                });
+                btn.classList.add('active');
+                btn.textContent = btn.textContent.replace(/[▾▴]/, '') +
+                    (currentSort.dir === 'desc' ? ' ▾' : ' ▴');
+                sortList();
+            });
         });
+
+        function sortList() {
+            const list = document.getElementById('article-list');
+            const rows = Array.from(list.querySelectorAll('.article-row'));
+            rows.sort((a, b) => {
+                let av = a.dataset[currentSort.key] || '';
+                let bv = b.dataset[currentSort.key] || '';
+                if (currentSort.key === 'score') {
+                    av = parseFloat(av) || 0;
+                    bv = parseFloat(bv) || 0;
+                } else {
+                    av = av.toLowerCase();
+                    bv = bv.toLowerCase();
+                }
+                if (av < bv) return currentSort.dir === 'asc' ? -1 : 1;
+                if (av > bv) return currentSort.dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+            rows.forEach(r => list.appendChild(r));
+        }
     </script>
 </body>
 </html>

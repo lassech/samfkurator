@@ -110,6 +110,7 @@ def display_daily(rows: list[tuple], console: Console | None = None):
             title, source, url, published, language,
             score, discipline, explanation,
             soc, pol, oko, ip, met,
+            quote, concepts,
         ) = row
 
         disc_name = DISCIPLINE_NAMES.get(discipline, discipline or "?")

@@ -39,5 +39,7 @@ class ScoringResult:
     disciplines: DisciplineScore
     primary_discipline: str
     explanation: str
+    quote: str = ""
+    concepts: str = ""
     scored_at: Optional[datetime] = None
     backend_used: str = "ollama"

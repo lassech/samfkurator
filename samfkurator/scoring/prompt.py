@@ -112,9 +112,12 @@ DEEP_READ_SYSTEM_PROMPT = (
     "- 3-4: Svag kobling. Kun overfladisk relation til fagets begreber.\n"
     "- 1-2: Ikke brugbar som undervisningsmateriale i Samfundsfag A.\n\n"
     "I 'explanation' SKAL du:\n"
-    "1. Nævne 1-3 SPECIFIKKE teorier/begreber der kan APPLICERES (ikke blot nævnes)\n"
-    "2. Beskrive HVAD eleverne konkret kan analysere med disse begreber\n"
-    "3. Hvis score < 5: forklare HVORFOR artiklen ikke er god nok\n\n"
+    "1. Beskrive HVAD eleverne konkret kan analysere med artiklens indhold\n"
+    "2. Hvis score < 5: forklare HVORFOR artiklen ikke er god nok\n\n"
+    "I 'concepts' angiver du 3-6 SPECIFIKKE fagbegreber/teorier fra pensum der kan appliceres direkte. "
+    "Skriv dem som en JSON-liste af korte strenge, fx [\"Bourdieu\", \"social arv\", \"habitus\"].\n\n"
+    "I 'quote' angiver du ET verbatim citat fra artikelteksten (1-2 sætninger) der bedst indrammer "
+    "artiklens faglige potentiale. Vælg en sætning der viser konkret hvad artiklen handler om.\n\n"
     "Du svarer KUN med valid JSON. Ingen anden tekst."
 )
 
@@ -145,7 +148,9 @@ def build_deep_read_prompt(
         '    "metode": <0-10>\n'
         "  },\n"
         '  "primary_discipline": "<sociologi|politik|okonomi|international_politik|metode>",\n'
-        '  "explanation": "<Hvilke konkrete teorier kan eleverne anvende, og hvad kan de analysere?>"\n'
+        '  "concepts": ["<begreb1>", "<begreb2>", "<begreb3>"],\n'
+        '  "explanation": "<Hvad kan eleverne konkret analysere med artiklen?>",\n'
+        '  "quote": "<Verbatim citat fra artiklen, 1-2 sætninger>"\n'
         "}"
     )
 
@@ -172,6 +177,12 @@ def parse_scoring_response(
         if text.startswith("```"):
             text = text.split("\n", 1)[1].rsplit("```", 1)[0]
         data = json.loads(text)
+        raw_concepts = data.get("concepts", [])
+        if isinstance(raw_concepts, list):
+            concepts_str = " · ".join(str(c) for c in raw_concepts)
+        else:
+            concepts_str = str(raw_concepts)
+
         return ScoringResult(
             article_url=article_url,
             overall_score=int(data["overall_score"]),
@@ -186,6 +197,8 @@ def parse_scoring_response(
             ),
             primary_discipline=data.get("primary_discipline", ""),
             explanation=data.get("explanation", ""),
+            quote=data.get("quote", ""),
+            concepts=concepts_str,
             backend_used=backend,
         )
     except (json.JSONDecodeError, KeyError, ValueError, TypeError):

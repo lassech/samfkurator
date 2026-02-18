@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS scores (
     metode INTEGER DEFAULT 0,
     primary_discipline TEXT,
     explanation TEXT,
+    quote TEXT,
+    concepts TEXT,
     backend_used TEXT,
     scored_at TEXT
 );
@@ -36,6 +38,19 @@ class Database:
     def __init__(self, path: str = "./samfkurator.db"):
         self.db = sqlite3.connect(path)
         self.db.executescript(CREATE_TABLES)
+        self._migrate()
+
+    def _migrate(self):
+        """Add new columns to existing databases."""
+        for table, col, coltype in [
+            ("scores", "quote", "TEXT"),
+            ("scores", "concepts", "TEXT"),
+        ]:
+            try:
+                self.db.execute(f"ALTER TABLE {table} ADD COLUMN {col} {coltype}")
+                self.db.commit()
+            except sqlite3.OperationalError:
+                pass  # Column already exists
 
     def has_article(self, url: str) -> bool:
         cur = self.db.execute("SELECT 1 FROM articles WHERE url = ?", (url,))
@@ -66,7 +81,11 @@ class Database:
 
     def save_score(self, result: ScoringResult) -> None:
         self.db.execute(
-            "INSERT OR REPLACE INTO scores VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            """INSERT OR REPLACE INTO scores
+               (article_url, overall_score, sociologi, politik, okonomi,
+                international_politik, metode, primary_discipline, explanation,
+                quote, concepts, backend_used, scored_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 result.article_url,
                 result.overall_score,
@@ -77,6 +96,8 @@ class Database:
                 result.disciplines.metode,
                 result.primary_discipline,
                 result.explanation,
+                result.quote,
+                result.concepts,
                 result.backend_used,
                 datetime.now().isoformat(),
             ),
@@ -92,7 +113,8 @@ class Database:
             SELECT a.title, a.source_name, a.url, a.published, a.language,
                    s.overall_score, s.primary_discipline, s.explanation,
                    s.sociologi, s.politik, s.okonomi,
-                   s.international_politik, s.metode
+                   s.international_politik, s.metode,
+                   s.quote, s.concepts
             FROM articles a JOIN scores s ON a.url = s.article_url
             WHERE s.overall_score >= ?
             ORDER BY s.overall_score DESC, a.published DESC
@@ -109,7 +131,8 @@ class Database:
             SELECT a.title, a.source_name, a.url, a.published, a.language,
                    s.overall_score, s.primary_discipline, s.explanation,
                    s.sociologi, s.politik, s.okonomi,
-                   s.international_politik, s.metode
+                   s.international_politik, s.metode,
+                   s.quote, s.concepts
             FROM articles a JOIN scores s ON a.url = s.article_url
             WHERE s.overall_score >= ?
               AND s.scored_at LIKE ?

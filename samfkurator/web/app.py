@@ -74,7 +74,7 @@ def index():
 
     must_reads = []
     for row in must_reads_raw:
-        title, source_name, url, published, language, score, disc, explanation, soc, pol, oko, ip, met = row
+        title, source_name, url, published, language, score, disc, explanation, soc, pol, oko, ip, met, quote, concepts = row
         must_reads.append({
             "title": title, "source": source_name, "url": url,
             "published_date": (published or "")[:10],
@@ -82,6 +82,8 @@ def index():
             "discipline": disc,
             "discipline_label": DISCIPLINE_NAMES.get(disc, disc or "?"),
             "explanation": explanation or "",
+            "quote": quote or "",
+            "concepts": concepts or "",
         })
 
     articles = []
@@ -91,6 +93,7 @@ def index():
             title, source_name, url, published, language,
             score, disc, explanation,
             soc, pol, oko, ip, met,
+            quote, concepts,
         ) = row
 
         sources_set.add(source_name)
@@ -118,6 +121,8 @@ def index():
             "discipline": disc,
             "discipline_label": DISCIPLINE_NAMES.get(disc, disc or "?"),
             "explanation": explanation or "",
+            "quote": quote or "",
+            "concepts": concepts or "",
             "soc": soc, "pol": pol, "oko": oko, "ip": ip, "met": met,
         })
 
