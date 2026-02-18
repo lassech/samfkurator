@@ -15,6 +15,7 @@ services:
     build: .
     volumes:
       - ./data:/data
+      - ./browser-profile:/tmp/samfkurator-browser-profile
     env_file: .env
     environment:
       - DATABASE_PATH=/data/samfkurator.db
