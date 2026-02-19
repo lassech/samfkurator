@@ -17,51 +17,11 @@ ai:
     model: "deepseek-chat"
     # API-nøgle sættes via DEEPSEEK_API_KEY miljøvariabel
 
-# Nyhedskilder via RSS (DR, TV2, internationale medier)
+# RSS-pipeline deaktiveret - al hentning sker nu via agent-browser
+# Genaktiver ved at indsætte kilder under danish/international igen
 sources:
-  danish:
-    - name: "DR Nyheder"
-      feeds:
-        - "https://www.dr.dk/nyheder/service/feeds/senestenyt"
-        - "https://www.dr.dk/nyheder/service/feeds/indland"
-        - "https://www.dr.dk/nyheder/service/feeds/udland"
-        - "https://www.dr.dk/nyheder/service/feeds/penge"
-        - "https://www.dr.dk/nyheder/service/feeds/politik"
-      paywall: false
-      language: "da"
-
-    - name: "TV2 Nyheder"
-      feeds:
-        - "https://feeds.tv2.dk/nyheder/rss"
-      paywall: false
-      language: "da"
-
-  international:
-    - name: "The Guardian"
-      feeds:
-        - "https://www.theguardian.com/world/rss"
-        - "https://www.theguardian.com/politics/rss"
-        - "https://www.theguardian.com/business/rss"
-      paywall: false
-      language: "en"
-
-    - name: "BBC News"
-      feeds:
-        - "https://feeds.bbci.co.uk/news/rss.xml"
-        - "https://feeds.bbci.co.uk/news/world/rss.xml"
-        - "https://feeds.bbci.co.uk/news/business/rss.xml"
-      paywall: false
-      language: "en"
-
-    - name: "New York Times"
-      feeds:
-        - "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
-        - "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"
-      paywall: true
-      language: "en"
-
-    # FT læses via agent-browser med bypass-paywalls (fuld tekst)
-    # NYT flyttes til RSS da bypass-paywalls ikke virker i Docker
+  danish: []
+  international: []
 
 # Agent-browser kilder (bypass-paywalls + fuld tekst + to-trins vurdering)
 agent_sources:

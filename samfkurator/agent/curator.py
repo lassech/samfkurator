@@ -6,9 +6,11 @@ Two-pass approach:
   2. Deep-read: Browser opens each candidate; LLM reads full text and scores
 """
 
+import os
 import random
 import time
 from datetime import datetime
+from pathlib import Path
 
 from rich.console import Console
 
@@ -16,6 +18,8 @@ from samfkurator.agent.browser import ArticleBrowser
 from samfkurator.db import Database
 from samfkurator.models import Article
 from samfkurator.scoring.prompt import parse_scoring_response
+
+LOG_PATH = Path(os.environ.get("SCRAPING_LOG_PATH", "./scraping.log"))
 
 
 def _create_backend(backend_name: str):
@@ -62,6 +66,8 @@ def run_agent(
 
     backend = _create_backend(backend_name)
     saved = 0
+    run_date = datetime.now().strftime("%Y-%m-%d %H:%M")
+    log_lines: list[str] = []
 
     with ArticleBrowser(headless=True) as browser:
         for site in agent_sites:
@@ -76,10 +82,16 @@ def run_agent(
                 headlines = browser.get_headlines(url)
             except Exception as e:
                 console.print(f"  [red]Kunne ikke hente {url}: {e}[/red]")
+                log_lines.append(
+                    f"{run_date} | {name} {url} | FEJL: {e}"
+                )
                 continue
 
             if not headlines:
                 console.print(f"  [dim]Ingen overskrifter fundet på {name}[/dim]")
+                log_lines.append(
+                    f"{run_date} | {name} {url} | 0 overskrifter | 0 kandidater | 0 gemt"
+                )
                 continue
 
             console.print(f"  Fandt {len(headlines)} overskrifter. Filtrerer med LLM...")
@@ -103,9 +115,13 @@ def run_agent(
             )
 
             if not candidates:
+                log_lines.append(
+                    f"{run_date} | {name} {url} | {len(headlines)} overskrifter | 0 kandidater | 0 gemt"
+                )
                 continue
 
             # ── Pass 2: Deep-read each candidate ─────────────────────────────
+            site_saved = 0
             for i, candidate in enumerate(candidates):
                 art_url = candidate["url"]
                 title = candidate["title"]
@@ -154,6 +170,7 @@ def run_agent(
                     db.save_article(article)
                     db.save_score(result)
                     saved += 1
+                    site_saved += 1
                     console.print(
                         f"    [green]✓ Score {score}/10 [{discipline}][/green] — gemmes"
                     )
@@ -162,10 +179,26 @@ def run_agent(
                         f"    [dim]✗ Score {score}/10 — ikke relevant nok[/dim]"
                     )
 
+            log_lines.append(
+                f"{run_date} | {name} {url} | {len(headlines)} overskrifter | {len(candidates)} kandidater | {site_saved} gemt"
+            )
+
             # Pause between sites
             site_delay = random.uniform(15.0, 30.0)
             console.print(f"  [dim]Pause mellem sites: {site_delay:.0f}s[/dim]")
             time.sleep(site_delay)
+
+    # Write log
+    log_lines.append(
+        f"{run_date} | TOTAL | {saved} artikler gemt i alt"
+    )
+    try:
+        LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with LOG_PATH.open("a", encoding="utf-8") as f:
+            for line in log_lines:
+                f.write(line + "\n")
+    except Exception as e:
+        console.print(f"[yellow]Advarsel: Kunne ikke skrive logfil: {e}[/yellow]")
 
     console.print(
         f"\n[bold green]Agent færdig. {saved} artikler gemt.[/bold green]"

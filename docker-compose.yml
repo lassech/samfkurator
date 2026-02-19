@@ -19,5 +19,6 @@ services:
     env_file: .env
     environment:
       - DATABASE_PATH=/data/samfkurator.db
+      - SCRAPING_LOG_PATH=/data/scraping.log
     profiles: ["agent"]
     command: samfkurator daily --backend deepseek

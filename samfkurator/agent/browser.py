@@ -54,7 +54,31 @@ class ArticleBrowser:
 
     def _accept_cookies(self):
         """Try to click through cookie consent dialogs."""
-        selectors = [
+        # Cookiebot-specific selector first (Berlingske, Weekendavisen, etc.)
+        cookiebot_selectors = [
+            "#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll",
+            "#CybotCookiebotDialogBodyButtonAccept",
+        ]
+        for selector in cookiebot_selectors:
+            try:
+                btn = self._page.locator(selector).first
+                if btn.is_visible(timeout=1500):
+                    btn.click()
+                    # Wait for dialog to disappear, then reload so content shows
+                    try:
+                        self._page.wait_for_selector(
+                            "#CybotCookiebotDialog", state="hidden", timeout=6000
+                        )
+                        self._page.reload(wait_until="load", timeout=20000)
+                        time.sleep(2)
+                    except Exception:
+                        time.sleep(2.5)
+                    return
+            except Exception:
+                continue
+
+        # Generic fallback selectors
+        generic_selectors = [
             "button:has-text('Tillad alle')",
             "button:has-text('Accepter alle')",
             "button:has-text('Accepter')",
@@ -63,7 +87,7 @@ class ArticleBrowser:
             "button:has-text('Kun nødvendige')",
             "button:has-text('OK')",
         ]
-        for selector in selectors:
+        for selector in generic_selectors:
             try:
                 btn = self._page.locator(selector).first
                 if btn.is_visible(timeout=1500):
