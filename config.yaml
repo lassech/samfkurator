@@ -58,6 +58,12 @@ agent_sources:
   - name: "Weekendavisen"
     url: "https://www.weekendavisen.dk/ideer"
     language: "da"
+  - name: "The Guardian"
+    url: "https://www.theguardian.com/world"
+    language: "en"
+  - name: "The Guardian"
+    url: "https://www.theguardian.com/politics"
+    language: "en"
 
 # Gammel BeautifulSoup-scraper (bruges ikke længere - erstattet af agent)
 scrape_sources: []
