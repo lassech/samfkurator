@@ -54,6 +54,7 @@ def _fetch_and_score(args, config, db, console):
         console.print(
             f"[bold]Agent browser starter ({backend_name})...[/bold]"
         )
+        no_jitter = getattr(args, "no_jitter", False)
         run_agent(
             [{"name": s.name, "url": s.url, "language": s.language}
              for s in config.agent_sources],
@@ -61,6 +62,7 @@ def _fetch_and_score(args, config, db, console):
             backend_name=backend_name,
             console=console,
             min_score=config.scoring.min_score_to_display,
+            jitter_minutes=0 if no_jitter else 20,
         )
 
     # 2. Filter already-scored articles
@@ -149,6 +151,10 @@ def main():
     daily_parser.add_argument(
         "--cached", action="store_true",
         help="Vis kun tidligere scorede artikler (ingen ny hentning)",
+    )
+    daily_parser.add_argument(
+        "--no-jitter", action="store_true",
+        help="Spring startup-forsinkelse over (til manuel kørsel)",
     )
 
     # All command - show all scored articles
