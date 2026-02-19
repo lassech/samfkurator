@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN pip install -e .
+RUN pip install -e . playwright-stealth
 
 # Install Playwright's Chromium browser
 RUN playwright install chromium

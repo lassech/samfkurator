@@ -6,6 +6,12 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright, Page, BrowserContext
 
+try:
+    from playwright_stealth import Stealth
+    _STEALTH = Stealth()
+except ImportError:
+    _STEALTH = None
+
 
 def _extension_path() -> str:
     """Find the bypass-paywalls extension directory."""
@@ -43,6 +49,8 @@ class ArticleBrowser:
             )
         )
         self._page: Page = self._context.new_page()
+        if _STEALTH:
+            _STEALTH.apply_stealth_sync(self._page)
 
     def _accept_cookies(self):
         """Try to click through cookie consent dialogs."""
