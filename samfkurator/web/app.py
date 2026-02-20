@@ -1,4 +1,5 @@
 import os
+import random
 from datetime import datetime
 from functools import wraps
 
@@ -126,6 +127,16 @@ def index():
             "soc": soc, "pol": pol, "oko": oko, "ip": ip, "met": met,
         })
 
+    # Shuffle within same-score groups so same-source articles don't cluster
+    by_score = {}
+    for a in articles:
+        by_score.setdefault(a["score"], []).append(a)
+    articles = []
+    for score in sorted(by_score.keys(), reverse=True):
+        group = by_score[score]
+        random.shuffle(group)
+        articles.extend(group)
+
     today = datetime.now().strftime("%Y-%m-%d")
 
     return render_template(
@@ -141,6 +152,34 @@ def index():
         current_date_to=date_to,
         today=today,
     )
+
+
+@app.route("/must")
+@login_required
+def must():
+    config = load_config()
+    db = Database(config.database.path)
+    today_rows = db.get_todays_scored_articles(min_score=5)
+    if not today_rows:
+        today_rows = db.get_scored_articles(min_score=5, limit=100)
+    must_reads_raw = select_daily(today_rows, config.daily)
+    db.close()
+
+    must_reads = []
+    for row in must_reads_raw:
+        title, source_name, url, published, language, score, disc, explanation, soc, pol, oko, ip, met, quote, concepts = row
+        must_reads.append({
+            "title": title, "source": source_name, "url": url,
+            "published_date": (published or "")[:10],
+            "language": language, "score": score,
+            "discipline": disc,
+            "discipline_label": DISCIPLINE_NAMES.get(disc, disc or "?"),
+            "explanation": explanation or "",
+            "quote": quote or "",
+            "concepts": concepts or "",
+        })
+
+    return render_template("must.html", must_reads=must_reads)
 
 
 def run_server(host: str = "0.0.0.0", port: int = 5000, debug: bool = False):

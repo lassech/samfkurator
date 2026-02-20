@@ -79,6 +79,7 @@ local_sources:
   - name: "Weekendavisen"
     url: "https://www.weekendavisen.dk/ideer"
     language: "da"
+  # NYT blokeret af PerimeterX selv med residential IP + non-headless Brave
 
 # Gammel BeautifulSoup-scraper (bruges ikke længere - erstattet af agent)
 scrape_sources: []

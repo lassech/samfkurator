@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samfkurator – Dagens must-reads</title>
+    <script defer src="https://umami.poltest.dk/script.js" data-website-id="f78c9ce5-b8ed-4cbf-ad3f-da20f0796809"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            padding: 2rem 2.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 { font-size: 1.25rem; color: #0ea5e9; margin-bottom: 0.2rem; }
+        .subtitle { color: #94a3b8; font-size: 0.8rem; margin-bottom: 2rem; }
+        .subtitle a { color: #64748b; text-decoration: none; }
+        .subtitle a:hover { color: #0ea5e9; }
+
+        .section-label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.75rem;
+        }
+
+        .must-reads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .must-read-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 0.85rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+        .must-read-card.disc-sociologi           { border-left-color: #9333ea; }
+        .must-read-card.disc-politik             { border-left-color: #dc2626; }
+        .must-read-card.disc-okonomi             { border-left-color: #16a34a; }
+        .must-read-card.disc-international_politik { border-left-color: #2563eb; }
+        .must-read-card.disc-metode              { border-left-color: #d97706; }
+
+        .must-read-card a {
+            color: #1e293b;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .must-read-card a:hover { color: #0ea5e9; }
+
+        .must-read-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .must-read-score { font-weight: 700; color: #16a34a; font-size: 0.8rem; }
+        .must-read-source { color: #94a3b8; font-size: 0.75rem; }
+        .lang-tag { font-size: 0.68rem; color: #94a3b8; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .badge-sociologi           { background: #f3e8ff; color: #7c3aed; }
+        .badge-politik             { background: #fee2e2; color: #b91c1c; }
+        .badge-okonomi             { background: #dcfce7; color: #15803d; }
+        .badge-international_politik { background: #dbeafe; color: #1d4ed8; }
+        .badge-metode              { background: #fef9c3; color: #a16207; }
+
+        .concept-tag {
+            display: inline-block;
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 0.1rem 0.4rem;
+            font-size: 0.7rem;
+        }
+
+        .must-read-concepts { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+        .must-read-explanation {
+            color: #64748b;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .must-read-quote {
+            color: #94a3b8;
+            font-size: 0.76rem;
+            font-style: italic;
+            line-height: 1.45;
+            border-left: 2px solid #e2e8f0;
+            padding-left: 0.5rem;
+        }
+
+        .empty { color: #94a3b8; font-size: 0.85rem; margin-top: 2rem; }
+    </style>
+</head>
+<body>
+    <h1>Samfkurator</h1>
+    <p class="subtitle">
+        Dagens must-reads til Samfundsfag A &mdash;
+        <a href="/">&larr; Alle artikler</a> &mdash;
+        <a href="/logout">log ud</a>
+    </p>
+
+    {% if must_reads %}
+    <p class="section-label">{{ must_reads|length }} must-reads</p>
+    <div class="must-reads-grid">
+        {% for a in must_reads %}
+        <div class="must-read-card disc-{{ a.discipline }}">
+            <a href="{{ a.url }}" target="_blank">{{ a.title }}</a>
+            <div class="must-read-meta">
+                <span class="must-read-score">{{ a.score }}/10</span>
+                <span class="badge badge-{{ a.discipline }}">{{ a.discipline_label }}</span>
+                <span class="must-read-source">{{ a.source }}</span>
+                {% if a.language == 'en' %}<span class="lang-tag">EN</span>{% endif %}
+            </div>
+            {% if a.concepts %}
+            <div class="must-read-concepts">
+                {% for c in a.concepts.split(' · ') %}
+                <span class="concept-tag">{{ c }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if a.explanation %}
+            <div class="must-read-explanation">{{ a.explanation }}</div>
+            {% endif %}
+            {% if a.quote %}
+            <div class="must-read-quote">{{ a.quote }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">Ingen must-reads fundet i dag.</p>
+    {% endif %}
+</body>
+</html>

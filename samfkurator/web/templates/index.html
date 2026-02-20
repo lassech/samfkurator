@@ -19,6 +19,8 @@
 
         h1 { font-size: 1.25rem; color: #0ea5e9; margin-bottom: 0.2rem; }
         .subtitle { color: #94a3b8; font-size: 0.8rem; margin-bottom: 2rem; }
+        .subtitle a { color: #64748b; text-decoration: none; }
+        .subtitle a:hover { color: #0ea5e9; }
 
         /* ── Filters ── */
         .filters {
@@ -30,7 +32,7 @@
         }
         .filter-group { display: flex; flex-direction: column; gap: 0.2rem; }
         .filters label { font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
-        .filters select, .filters input {
+        .filters select, .filters input[type="date"], .filters input[type="search"] {
             background: #ffffff;
             color: #1e293b;
             border: 1px solid #e2e8f0;
@@ -38,6 +40,8 @@
             padding: 0.35rem 0.6rem;
             font-size: 0.82rem;
         }
+        .filters input[type="search"] { width: 180px; }
+        .filters input[type="search"]:focus { outline: none; border-color: #0ea5e9; }
         .filter-dates { display: flex; gap: 0.4rem; align-items: center; }
         .filter-dates .sep { color: #94a3b8; font-size: 0.8rem; }
         .count { color: #94a3b8; font-size: 0.8rem; margin-left: auto; align-self: flex-end; }
@@ -51,59 +55,6 @@
             cursor: pointer;
         }
         .btn:hover { color: #1e293b; border-color: #94a3b8; }
-
-        /* ── Must-reads ── */
-        .must-reads-section { margin-bottom: 2rem; }
-        .section-label {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 0.75rem;
-        }
-        .must-reads-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 0.6rem;
-        }
-        .must-read-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-left: 3px solid #cbd5e1;
-            border-radius: 6px;
-            padding: 0.75rem 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-        .must-read-card.disc-sociologi      { border-left-color: #9333ea; }
-        .must-read-card.disc-politik        { border-left-color: #dc2626; }
-        .must-read-card.disc-okonomi        { border-left-color: #16a34a; }
-        .must-read-card.disc-international_politik { border-left-color: #2563eb; }
-        .must-read-card.disc-metode         { border-left-color: #d97706; }
-        .must-read-card a {
-            color: #1e293b;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.875rem;
-            line-height: 1.4;
-        }
-        .must-read-card a:hover { color: #0ea5e9; }
-        .must-read-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-        .must-read-score { font-weight: 700; color: #16a34a; font-size: 0.8rem; }
-        .must-read-source { color: #94a3b8; font-size: 0.75rem; }
-        .must-read-explanation { color: #64748b; font-size: 0.78rem; line-height: 1.45; }
-        .must-read-quote {
-            color: #94a3b8;
-            font-size: 0.76rem;
-            font-style: italic;
-            line-height: 1.45;
-            border-left: 2px solid #e2e8f0;
-            padding-left: 0.5rem;
-        }
-        .must-read-concepts { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-
-        hr.divider { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
 
         /* ── Discipline badge ── */
         .badge {
@@ -130,6 +81,9 @@
             padding: 0.1rem 0.4rem;
             font-size: 0.7rem;
         }
+
+        /* ── Highlight ── */
+        mark { background: #fef08a; border-radius: 2px; padding: 0 1px; font-style: normal; }
 
         /* ── Article list ── */
         .article-list { display: flex; flex-direction: column; gap: 0; }
@@ -221,40 +175,11 @@
 </head>
 <body>
     <h1>Samfkurator</h1>
-    <p class="subtitle">Nyhedsrelevans for Samfundsfag A (stx) &mdash; <a href="/logout" style="color:#334155;text-decoration:none;">log ud</a></p>
-
-    {% if must_reads %}
-    <div class="must-reads-section">
-        <p class="section-label">Dagens {{ must_reads|length }} must-reads</p>
-        <div class="must-reads-grid">
-            {% for a in must_reads %}
-            <div class="must-read-card disc-{{ a.discipline }}">
-                <a href="{{ a.url }}" target="_blank">{{ a.title }}</a>
-                <div class="must-read-meta">
-                    <span class="must-read-score">{{ a.score }}/10</span>
-                    <span class="badge badge-{{ a.discipline }}">{{ a.discipline_label }}</span>
-                    <span class="must-read-source">{{ a.source }}</span>
-                    {% if a.language == 'en' %}<span class="lang-tag">EN</span>{% endif %}
-                </div>
-                {% if a.concepts %}
-                <div class="must-read-concepts">
-                    {% for c in a.concepts.split(' · ') %}
-                    <span class="concept-tag">{{ c }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% if a.explanation %}
-                <div class="must-read-explanation">{{ a.explanation }}</div>
-                {% endif %}
-                {% if a.quote %}
-                <div class="must-read-quote">{{ a.quote }}</div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    <hr class="divider">
-    {% endif %}
+    <p class="subtitle">
+        Nyhedsrelevans for Samfundsfag A (stx) &mdash;
+        <a href="/must">Dagens must-reads &rarr;</a> &mdash;
+        <a href="/logout">log ud</a>
+    </p>
 
     <div class="filters">
         <div class="filter-group">
@@ -291,11 +216,15 @@
                 <input type="date" id="filter-date-to" value="{{ current_date_to }}" max="{{ today }}">
             </div>
         </div>
+        <div class="filter-group">
+            <label>Søg</label>
+            <input type="search" id="filter-search" placeholder="titel, begreber, begrundelse…">
+        </div>
         <button class="btn" id="btn-today">I dag</button>
         <button class="btn" id="btn-week">Uge</button>
         <button class="btn" id="btn-month">Måned</button>
         <button class="btn" id="btn-reset">Nulstil</button>
-        <span class="count">{{ articles|length }} artikler</span>
+        <span class="count" id="article-count">{{ articles|length }} artikler</span>
     </div>
 
     <div class="sort-bar">
@@ -351,7 +280,7 @@
     </div>
 
     <script>
-        // ── Filters ──────────────────────────────────────────────────────────
+        // ── Server-side filters ───────────────────────────────────────────────
         function applyFilters() {
             const score = document.getElementById('filter-score').value;
             const discipline = document.getElementById('filter-discipline').value;
@@ -429,6 +358,65 @@
             });
             rows.forEach(r => list.appendChild(r));
         }
+
+        // ── Search with highlighting ──────────────────────────────────────────
+        const rowMeta = Array.from(document.querySelectorAll('.article-row')).map(row => {
+            const titleEl = row.querySelector('.article-title');
+            const explanationEl = row.querySelector('.article-explanation');
+            const conceptEls = [...row.querySelectorAll('.concept-tag')];
+            const titleText = titleEl ? titleEl.textContent : '';
+            const explanationText = explanationEl ? explanationEl.textContent : '';
+            const conceptTexts = conceptEls.map(el => el.textContent);
+            return {
+                row,
+                titleEl,
+                titleText,
+                explanationEl,
+                explanationText,
+                conceptEls,
+                conceptTexts,
+                searchStr: (titleText + ' ' + explanationText + ' ' + conceptTexts.join(' ')).toLowerCase(),
+            };
+        });
+
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+        function escRe(s) {
+            return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        }
+        function hl(text, re) {
+            return escHtml(text).replace(re, '<mark>$1</mark>');
+        }
+
+        function applySearch() {
+            const rawTerm = document.getElementById('filter-search').value.trim();
+            const term = rawTerm.toLowerCase();
+            const re = term ? new RegExp('(' + escRe(rawTerm) + ')', 'gi') : null;
+            let visible = 0;
+
+            rowMeta.forEach(m => {
+                if (!term || m.searchStr.includes(term)) {
+                    m.row.style.display = '';
+                    visible++;
+                    if (re) {
+                        if (m.titleEl) m.titleEl.innerHTML = hl(m.titleText, re);
+                        if (m.explanationEl) m.explanationEl.innerHTML = hl(m.explanationText, re);
+                        m.conceptEls.forEach((el, i) => { el.innerHTML = hl(m.conceptTexts[i], re); });
+                    } else {
+                        if (m.titleEl) m.titleEl.textContent = m.titleText;
+                        if (m.explanationEl) m.explanationEl.textContent = m.explanationText;
+                        m.conceptEls.forEach((el, i) => { el.textContent = m.conceptTexts[i]; });
+                    }
+                } else {
+                    m.row.style.display = 'none';
+                }
+            });
+
+            document.getElementById('article-count').textContent = visible + ' artikler';
+        }
+
+        document.getElementById('filter-search').addEventListener('input', applySearch);
     </script>
 </body>
 </html>
