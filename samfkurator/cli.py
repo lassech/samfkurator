@@ -268,11 +268,15 @@ def main():
             )
 
             # Sync: træk serverens DB ned inden kørsel
+            import subprocess
+            import sqlite3
+            import tempfile
+
             sync_cfg = config.sync
             do_sync = getattr(args, "sync", False) and sync_cfg.host
             local_db_path = config.database.path
+
             if do_sync:
-                import subprocess
                 remote = f"{sync_cfg.host}:{sync_cfg.remote_db_path}"
                 console.print(f"[dim]Trækker DB fra {remote}...[/dim]")
                 result = subprocess.run(
@@ -283,9 +287,9 @@ def main():
                     console.print(
                         f"[yellow]Advarsel: Kunne ikke trække DB: {result.stderr.strip()}[/yellow]"
                     )
+                    do_sync = False  # kør stadig, men skip push
                 else:
                     console.print("[dim]DB hentet — fortsætter med serverens data.[/dim]")
-                    # Genåbn DB med de nye data
                     db.close()
                     db = Database(local_db_path)
 
@@ -302,20 +306,53 @@ def main():
                 user_data_dir=udir,
             )
 
-            # Sync: push den opdaterede DB tilbage til serveren
+            # Sync: merge-push (undgår konflikter ved samtidige server-writes)
+            # Strategi: hent frisk server-DB, tilføj kun nye lokale rækker
+            # (INSERT OR IGNORE → server-data vinder ved overlap)
             if do_sync:
                 remote = f"{sync_cfg.host}:{sync_cfg.remote_db_path}"
-                console.print(f"[dim]Pusher DB til {remote}...[/dim]")
-                result = subprocess.run(
-                    ["scp", local_db_path, remote],
+                console.print(f"[dim]Merger lokale artikler ind i serverens DB...[/dim]")
+
+                with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+                    fresh_path = tmp.name
+
+                # Hent frisk kopi af server-DB (kan have nye rækker siden vi pull'ede)
+                pull_result = subprocess.run(
+                    ["scp", remote, fresh_path],
                     capture_output=True, text=True,
                 )
-                if result.returncode != 0:
+                if pull_result.returncode != 0:
                     console.print(
-                        f"[yellow]Advarsel: Kunne ikke pushe DB: {result.stderr.strip()}[/yellow]"
+                        f"[yellow]Advarsel: Kunne ikke hente frisk DB til merge: "
+                        f"{pull_result.stderr.strip()}[/yellow]"
                     )
                 else:
-                    console.print("[green]DB synkroniseret til server.[/green]")
+                    # SQLite ATTACH merge: kopier kun rækker der ikke allerede er på server
+                    conn = sqlite3.connect(fresh_path)
+                    conn.execute("ATTACH DATABASE ? AS local", [local_db_path])
+                    conn.execute(
+                        "INSERT OR IGNORE INTO articles SELECT * FROM local.articles"
+                    )
+                    conn.execute(
+                        "INSERT OR IGNORE INTO scores SELECT * FROM local.scores"
+                    )
+                    conn.commit()
+                    conn.close()
+
+                    # Push den mergede DB til serveren
+                    push_result = subprocess.run(
+                        ["scp", fresh_path, remote],
+                        capture_output=True, text=True,
+                    )
+                    if push_result.returncode != 0:
+                        console.print(
+                            f"[yellow]Advarsel: Push fejlede: {push_result.stderr.strip()}[/yellow]"
+                        )
+                    else:
+                        console.print("[green]DB merget og synkroniseret til server.[/green]")
+
+                    import os as _os
+                    _os.unlink(fresh_path)
 
             # Vis dagens resultater inkl. det der lige er hentet
             rows = db.get_todays_scored_articles(config.scoring.min_score_to_display)
