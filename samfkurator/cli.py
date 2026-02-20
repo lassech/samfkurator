@@ -184,6 +184,20 @@ def main():
         help="Vis kun tidligere scorede artikler",
     )
 
+    # Local command - lokal Brave-agent til Cloudflare-beskyttede sider
+    local_parser = subparsers.add_parser(
+        "local",
+        help="Lokal Brave-agent til sider blokeret på serveren (Berlingske, Weekendavisen...)",
+    )
+    local_parser.add_argument(
+        "--backend", choices=["ollama", "claude", "gemini", "deepseek"],
+        help="AI backend (overrides config)",
+    )
+    local_parser.add_argument(
+        "--no-fetch", action="store_true",
+        help="Spring fuld tekst-ekstraktion over",
+    )
+
     # Web command
     web_parser = subparsers.add_parser(
         "web", help="Start webserver med sortérbar tabel"
@@ -223,7 +237,52 @@ def main():
         args.cached = False
 
     try:
-        if args.command == "daily":
+        if args.command == "local":
+            if not config.local_sources:
+                console.print(
+                    "[yellow]Ingen local_sources konfigureret i config.yaml[/yellow]"
+                )
+                return
+
+            import os
+            from samfkurator.agent.curator import run_agent
+
+            backend_name = getattr(args, "backend", None) or config.ai.backend
+            exe = config.local_browser.executable_path or None
+            udir = os.path.expanduser(config.local_browser.user_data_dir)
+
+            console.print(
+                f"[bold cyan]Lokal browser-agent starter ({backend_name})...[/bold cyan]"
+            )
+            if exe:
+                console.print(f"[dim]Browser: {exe}[/dim]")
+            console.print(f"[dim]Profil: {udir}[/dim]")
+            console.print(
+                f"[dim]{len(config.local_sources)} kilder: "
+                + ", ".join(s.name for s in config.local_sources)
+                + "[/dim]"
+            )
+
+            run_agent(
+                [{"name": s.name, "url": s.url, "language": s.language}
+                 for s in config.local_sources],
+                db=db,
+                backend_name=backend_name,
+                console=console,
+                min_score=config.scoring.min_score_to_display,
+                jitter_minutes=0,          # aldrig jitter ved lokal kørsel
+                headless=False,            # synligt browservindue
+                executable_path=exe,
+                user_data_dir=udir,
+            )
+
+            # Vis dagens resultater inkl. det der lige er hentet
+            rows = db.get_todays_scored_articles(config.scoring.min_score_to_display)
+            if rows:
+                daily_rows = select_daily(rows, config.daily)
+                display_daily(daily_rows, console)
+
+        elif args.command == "daily":
             if not args.cached:
                 _fetch_and_score(args, config, db, console)
 

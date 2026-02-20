@@ -45,11 +45,16 @@ def run_agent(
     console: Console | None = None,
     min_score: int = 5,
     jitter_minutes: int = 20,
+    headless: bool = True,
+    executable_path: str | None = None,
+    user_data_dir: str = "/tmp/samfkurator-browser-profile",
 ) -> int:
     """
     Run the agent on a list of news sites.
 
     Each site dict: {"name": str, "url": str, "language": str}
+
+    headless=False + executable_path → lokal Brave/Chrome (omgår Cloudflare IP-blokering)
 
     Returns number of articles saved.
     """
@@ -69,7 +74,11 @@ def run_agent(
     run_date = datetime.now().strftime("%Y-%m-%d %H:%M")
     log_lines: list[str] = []
 
-    with ArticleBrowser(headless=True) as browser:
+    with ArticleBrowser(
+        headless=headless,
+        executable_path=executable_path,
+        user_data_dir=user_data_dir,
+    ) as browser:
         for site in agent_sites:
             name = site["name"]
             url = site["url"]

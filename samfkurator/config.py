@@ -86,6 +86,12 @@ class AgentSourceConfig:
 
 
 @dataclass
+class LocalBrowserConfig:
+    executable_path: str = "/snap/brave/current/opt/brave.com/brave/brave"
+    user_data_dir: str = "~/.samfkurator-brave-profile"
+
+
+@dataclass
 class ScrapeSourceConfig:
     name: str
     urls: list[str]
@@ -101,6 +107,8 @@ class Config:
     sources_international: list[SourceConfig] = field(default_factory=list)
     scrape_sources: list[ScrapeSourceConfig] = field(default_factory=list)
     agent_sources: list[AgentSourceConfig] = field(default_factory=list)
+    local_sources: list[AgentSourceConfig] = field(default_factory=list)
+    local_browser: LocalBrowserConfig = field(default_factory=LocalBrowserConfig)
     scraping: ScrapingConfig = field(default_factory=ScrapingConfig)
     scoring: ScoringConfig = field(default_factory=ScoringConfig)
     daily: DailyConfig = field(default_factory=DailyConfig)
@@ -162,6 +170,12 @@ def load_config(path: str | None = None) -> Config:
         AgentSourceConfig(**s) for s in raw.get("agent_sources", [])
     ]
 
+    # Parse local sources (lokal Brave-agent)
+    local_sources = [
+        AgentSourceConfig(**s) for s in raw.get("local_sources", [])
+    ]
+    local_browser = LocalBrowserConfig(**raw.get("local_browser", {}))
+
     # Parse simple configs
     scraping = ScrapingConfig(**raw.get("scraping", {}))
     scoring = ScoringConfig(**raw.get("scoring", {}))
@@ -177,6 +191,8 @@ def load_config(path: str | None = None) -> Config:
         sources_international=international,
         scrape_sources=scrape_sources,
         agent_sources=agent_sources,
+        local_sources=local_sources,
+        local_browser=local_browser,
         scraping=scraping,
         scoring=scoring,
         daily=daily,

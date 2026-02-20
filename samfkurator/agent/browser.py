@@ -1,5 +1,6 @@
 """Playwright-based browser with bypass-paywalls extension for full article access."""
 
+import os
 import random
 import time
 from pathlib import Path
@@ -29,24 +30,45 @@ def _extension_path() -> str:
 
 
 class ArticleBrowser:
-    """Headless browser with bypass-paywalls extension loaded."""
+    """Playwright browser with bypass-paywalls extension.
 
-    def __init__(self, headless: bool = True):
+    headless=True  → server mode (Chromium headless)
+    headless=False → local mode (real browser, synligt vindue)
+
+    executable_path: sti til Brave/Chrome-binær (None = Playwright bundled Chromium)
+    user_data_dir:   browser-profil mappe
+    """
+
+    def __init__(
+        self,
+        headless: bool = True,
+        executable_path: str | None = None,
+        user_data_dir: str = "/tmp/samfkurator-browser-profile",
+    ):
         self._playwright = sync_playwright().start()
         ext = _extension_path()
+
+        args = [
+            f"--disable-extensions-except={ext}",
+            f"--load-extension={ext}",
+        ]
+        # --no-sandbox og --disable-dev-shm-usage er nødvendige i Docker/root,
+        # men kan forstyrre et normalt desktop-miljø (og snap-browsere)
+        if os.getuid() == 0:
+            args += ["--no-sandbox", "--disable-dev-shm-usage"]
+
+        launch_kwargs = dict(
+            user_data_dir=user_data_dir,
+            headless=headless,
+            args=args,
+            viewport={"width": 1280, "height": 900},
+        )
+        if executable_path:
+            launch_kwargs["executable_path"] = executable_path
+
         # Chrome extensions require persistent context
         self._context: BrowserContext = (
-            self._playwright.chromium.launch_persistent_context(
-                user_data_dir="/tmp/samfkurator-browser-profile",
-                headless=headless,
-                args=[
-                    f"--disable-extensions-except={ext}",
-                    f"--load-extension={ext}",
-                    "--no-sandbox",
-                    "--disable-dev-shm-usage",
-                ],
-                viewport={"width": 1280, "height": 900},
-            )
+            self._playwright.chromium.launch_persistent_context(**launch_kwargs)
         )
         self._page: Page = self._context.new_page()
         if _STEALTH:

@@ -55,6 +55,26 @@ agent_sources:
     url: "https://www.theguardian.com/politics"
     language: "en"
 
+# Lokal Brave-agent: kører på din computer med dit hjemme-IP (omgår Cloudflare)
+# Brug: samfkurator local --backend gemini
+local_browser:
+  executable_path: "/snap/brave/current/opt/brave.com/brave/brave"
+  user_data_dir: "~/.samfkurator-brave-profile"
+
+local_sources:
+  - name: "Berlingske"
+    url: "https://www.berlingske.dk/politik"
+    language: "da"
+  - name: "Berlingske"
+    url: "https://www.berlingske.dk/internationalt"
+    language: "da"
+  - name: "Weekendavisen"
+    url: "https://www.weekendavisen.dk/samfund"
+    language: "da"
+  - name: "Weekendavisen"
+    url: "https://www.weekendavisen.dk/ideer"
+    language: "da"
+
 # Gammel BeautifulSoup-scraper (bruges ikke længere - erstattet af agent)
 scrape_sources: []
 
