@@ -197,6 +197,10 @@ def main():
         "--no-fetch", action="store_true",
         help="Spring fuld tekst-ekstraktion over",
     )
+    local_parser.add_argument(
+        "--sync", action="store_true",
+        help="Træk serverens DB ned inden kørsel og push tilbage bagefter",
+    )
 
     # Web command
     web_parser = subparsers.add_parser(
@@ -263,6 +267,28 @@ def main():
                 + "[/dim]"
             )
 
+            # Sync: træk serverens DB ned inden kørsel
+            sync_cfg = config.sync
+            do_sync = getattr(args, "sync", False) and sync_cfg.host
+            local_db_path = config.database.path
+            if do_sync:
+                import subprocess
+                remote = f"{sync_cfg.host}:{sync_cfg.remote_db_path}"
+                console.print(f"[dim]Trækker DB fra {remote}...[/dim]")
+                result = subprocess.run(
+                    ["scp", remote, local_db_path],
+                    capture_output=True, text=True,
+                )
+                if result.returncode != 0:
+                    console.print(
+                        f"[yellow]Advarsel: Kunne ikke trække DB: {result.stderr.strip()}[/yellow]"
+                    )
+                else:
+                    console.print("[dim]DB hentet — fortsætter med serverens data.[/dim]")
+                    # Genåbn DB med de nye data
+                    db.close()
+                    db = Database(local_db_path)
+
             run_agent(
                 [{"name": s.name, "url": s.url, "language": s.language}
                  for s in config.local_sources],
@@ -275,6 +301,21 @@ def main():
                 executable_path=exe,
                 user_data_dir=udir,
             )
+
+            # Sync: push den opdaterede DB tilbage til serveren
+            if do_sync:
+                remote = f"{sync_cfg.host}:{sync_cfg.remote_db_path}"
+                console.print(f"[dim]Pusher DB til {remote}...[/dim]")
+                result = subprocess.run(
+                    ["scp", local_db_path, remote],
+                    capture_output=True, text=True,
+                )
+                if result.returncode != 0:
+                    console.print(
+                        f"[yellow]Advarsel: Kunne ikke pushe DB: {result.stderr.strip()}[/yellow]"
+                    )
+                else:
+                    console.print("[green]DB synkroniseret til server.[/green]")
 
             # Vis dagens resultater inkl. det der lige er hentet
             rows = db.get_todays_scored_articles(config.scoring.min_score_to_display)

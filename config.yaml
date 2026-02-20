@@ -56,10 +56,15 @@ agent_sources:
     language: "en"
 
 # Lokal Brave-agent: kører på din computer med dit hjemme-IP (omgår Cloudflare)
-# Brug: samfkurator local --backend gemini
+# Brug: samfkurator local --backend gemini --sync
 local_browser:
   executable_path: "/snap/brave/current/opt/brave.com/brave/brave"
   user_data_dir: "~/.samfkurator-brave-profile"
+
+# Sync: trækker serverens DB ned inden local-kørsel og pusher tilbage bagefter
+sync:
+  host: "root@89.167.70.173"
+  remote_db_path: "/opt/samfkurator/data/samfkurator.db"
 
 local_sources:
   - name: "Berlingske"

@@ -92,6 +92,12 @@ class LocalBrowserConfig:
 
 
 @dataclass
+class SyncConfig:
+    host: str = ""
+    remote_db_path: str = "/opt/samfkurator/data/samfkurator.db"
+
+
+@dataclass
 class ScrapeSourceConfig:
     name: str
     urls: list[str]
@@ -109,6 +115,7 @@ class Config:
     agent_sources: list[AgentSourceConfig] = field(default_factory=list)
     local_sources: list[AgentSourceConfig] = field(default_factory=list)
     local_browser: LocalBrowserConfig = field(default_factory=LocalBrowserConfig)
+    sync: SyncConfig = field(default_factory=SyncConfig)
     scraping: ScrapingConfig = field(default_factory=ScrapingConfig)
     scoring: ScoringConfig = field(default_factory=ScoringConfig)
     daily: DailyConfig = field(default_factory=DailyConfig)
@@ -175,6 +182,7 @@ def load_config(path: str | None = None) -> Config:
         AgentSourceConfig(**s) for s in raw.get("local_sources", [])
     ]
     local_browser = LocalBrowserConfig(**raw.get("local_browser", {}))
+    sync = SyncConfig(**raw.get("sync", {}))
 
     # Parse simple configs
     scraping = ScrapingConfig(**raw.get("scraping", {}))
@@ -193,6 +201,7 @@ def load_config(path: str | None = None) -> Config:
         agent_sources=agent_sources,
         local_sources=local_sources,
         local_browser=local_browser,
+        sync=sync,
         scraping=scraping,
         scoring=scoring,
         daily=daily,
